@@ -1,6 +1,6 @@
 /* Keeps the app shell and built-in photos on the phone so the app opens fast, even with a weak signal.
    Shared data (plans, photos, weather) always comes from the network. */
-const V = 'okt-shell-v5';
+const V = 'okt-shell-v6';
 const SHELL = ['./', 'index.html', 'sync.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

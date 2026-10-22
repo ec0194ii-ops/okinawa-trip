@@ -846,8 +846,10 @@ nav button[data-badge]::before{content:attr(data-badge);position:absolute;top:0;
 .ins-steps{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.5}
 .ins-steps small{display:block;font-size:11px;color:var(--soft)}
 .share-ic{display:inline-grid;place-items:center;width:20px;height:20px;margin:0 3px;vertical-align:-4px;color:#2f7cf6}.share-ic svg{width:18px;height:18px}
-.install-ban{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-radius:18px;background:rgba(15,42,58,.94);color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:fadeup .5s ease both;max-width:520px;margin:0 auto}
+.install-ban{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;flex-direction:column;gap:10px;padding:10px 10px 10px 12px;border-radius:18px;background:rgba(15,42,58,.94);color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:fadeup .5s ease both;max-width:520px;margin:0 auto}
+.ib-top{display:flex;align-items:center;gap:10px}
 .install-ban img{border-radius:10px;flex:none}
+.ib-steps .ins-steps{font-size:12.5px;padding:2px 6px 4px 1.6em}.ib-steps .ins-steps small{color:rgba(255,255,255,.7)}.ib-steps b{color:#fff}.ib-steps .share-ic{color:#7fb6ff}
 .install-ban p{margin:0;flex:1;min-width:0;font-size:12.5px;line-height:1.35}.install-ban p b{display:block;font-size:13.5px}.install-ban p span{opacity:.8}
 .install-ban .mini-btn{background:#fff;color:var(--ink);border-color:#fff}
 .install-ban .x{border:0;background:none;color:#fff;opacity:.7;font-size:20px;width:28px;height:28px;padding:0}
@@ -945,11 +947,6 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
     <div class="sec-h"><h2>旅行中の天気予報</h2><span>気象庁</span></div>
     <div class="fc" id="fc"></div>
     <p class="note" id="fcNote"></p>
-  </section>
-
-  <section class="sec" id="installSec" hidden>
-    <div class="sec-h"><h2>ホーム画面に置く</h2><span>アプリみたいに全画面で開けます</span></div>
-    <div class="install"><img src="icon-180.png" alt="" width="60" height="60"><div id="installBody"></div></div>
   </section>
 
   <section class="sec" id="reqSec">
@@ -1066,7 +1063,7 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
 </div>
 <canvas id="burst" aria-hidden="true"></canvas>
 <div class="ptr" id="ptr" aria-live="polite"><svg class="ptr-w" viewBox="0 0 800 60" preserveAspectRatio="none" aria-hidden="true"><path class="w1" d="M0 30 Q50 10 100 30 T200 30 T300 30 T400 30 T500 30 T600 30 T700 30 T800 30 V60 H0Z"/><path class="w2" d="M0 36 Q50 20 100 36 T200 36 T300 36 T400 36 T500 36 T600 36 T700 36 T800 36 V60 H0Z"/></svg><span id="ptrTxt">引っぱって更新</span></div>
-<div class="install-ban" id="installBan" hidden><img src="icon-180.png" alt="" width="40" height="40"><p><b>ホーム画面に置けます</b><span>アイコンからアプリみたいに開けます</span></p><button type="button" class="mini-btn" data-install-how>やり方</button><button type="button" class="x" data-install-close aria-label="閉じる">×</button></div>
+<div class="install-ban" id="installBan" hidden><div class="ib-top"><img src="icon-180.png" alt="" width="40" height="40"><p><b>ホーム画面に置けます</b><span>アイコンからアプリみたいに開けます</span></p><button type="button" class="mini-btn" id="installHow" data-install-how>やり方</button><button type="button" class="x" data-install-close aria-label="閉じる">×</button></div><div class="ib-steps" id="installSteps" hidden></div></div>
 
 <!-- FORECAST:START — updated automatically from the Japan Meteorological Agency. status: "pending" until the trip dates appear in the forecast. -->
 <script type="application/json" id="forecast">
@@ -2156,6 +2153,7 @@ const TOUR = [
   {v:'home', sel:'#strip', title:'見逃したカードもここに', text:'これまでのカードが並びます。「未開封」のカードは、あとから開けます。'},
   {v:'home', sel:'#flightSec', title:'着いたら「着いた！」', text:'那覇に着いたら、自分の家族の「着いた！」を押します。ふたつの家族がそろうと、お祝いが出ます。'},
   {v:'home', sel:'#fcSec', title:'旅行中の天気予報', text:'気象庁の最新の予報を、開くたびに読み込みます。旅行日が予報に入るのは11/13ごろからです。'},
+  {v:'home', title:'ホーム画面に置く', text:'iPhoneはSafariで開いて「共有ボタン → ホーム画面に追加」、AndroidはChromeの「︙ → ホーム画面に追加」。ホーム画面のアイコンから、アプリみたいに全画面で開けます（最初の1回だけ合言葉をもう一度）。'},
   {v:'home', sel:'#reqSec', title:'アプリへのリクエスト', text:'「こんな機能がほしい」「これを共有したい」は、HOMEのいちばん下から名前なしで送れます。'},
   {v:'plan', sel:'#whoSeg', title:'PLAN：みんなで編集', text:'旅程はふたつの家族のだれでも編集できます。だれが何を変えたかが上に残り、相手の家族にはおしらせが届きます。'},
   {v:'plan', sel:'#planDays', title:'日にちを選ぶ', text:'4日間の旅程です。日付を押すと、その日の流れが写真つきで見られます。'},
@@ -2543,16 +2541,17 @@ function installSteps(){
     : `<ol class="ins-steps"><li><b>Chrome</b>でこのページを開く</li><li>右上の<b>︙メニュー</b>→<b>「ホーム画面に追加」</b>（または「アプリをインストール」）</li><li>ホーム画面の<b>Okinawa</b>アイコンから開く<small>最初の1回だけ、もう一度合言葉を入れてください</small></li></ol>`;
 }
 function renderInstall(){
-  const sec = $('installSec'); if (!sec) return;
-  sec.hidden = STANDALONE;
-  $('installBody').innerHTML = (installEvt ? `<button type="button" class="btn" data-install-now>ホーム画面に追加する</button>` : installSteps());
-  const ban = $('installBan'), show_ = !STANDALONE && Sync.signedIn && ls.get(TUT_KEY, false) && !ls.get('okt-install-dismissed', false) && view === 'home';
+  const ban = $('installBan'); if (!ban) return;
+  const show_ = !STANDALONE && Sync.signedIn && ls.get(TUT_KEY, false) && !ls.get('okt-install-dismissed', false) && view === 'home' && overlayFreeNow();
   ban.hidden = !show_;
+  $('installHow').textContent = installEvt ? '追加する' : ($('installSteps').hidden ? 'やり方' : '閉じる');
 }
 document.addEventListener('click', e => {
-  if (e.target.closest('[data-install-now]')) { if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; renderInstall(); }); } return; }
+  if (e.target.closest('[data-install-how]')) {
+    if (installEvt) { try { const ev = installEvt; Promise.resolve(ev.prompt()).catch(() => { installEvt = null; const st = $('installSteps'); st.innerHTML = installSteps(); st.hidden = false; renderInstall(); }); ev.userChoice.finally(() => { installEvt = null; renderInstall(); }); return; } catch { installEvt = null; } }
+    const st = $('installSteps'); if (st.hidden) { st.innerHTML = installSteps(); st.hidden = false; } else st.hidden = true;
+    renderInstall(); return; }
   if (e.target.closest('[data-install-close]')) { ls.set('okt-install-dismissed', true); renderInstall(); return; }
-  if (e.target.closest('[data-install-how]')) { ls.set('okt-install-dismissed', true); renderInstall(); $('installSec').scrollIntoView({behavior:'smooth', block:'start'}); return; }
 });
 if (STANDALONE) document.documentElement.classList.add('standalone');
 { const _sh = show; show = function(){ _sh.apply(this, arguments); renderInstall(); }; }
