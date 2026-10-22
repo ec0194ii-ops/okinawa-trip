@@ -1402,7 +1402,7 @@ const LIB = [['umikaji','ウミカジテラス'],['umikaji2','ウミカジテラ
   ['whale','美ら海'],['tank','美ら海'],['aquarium','美ら海'],['fukugi','フクギ並木'],['forest','フクギ並木'],['sesoko','瀬底ビーチ'],['emerald','エメラルドビーチ'],
   ['sunset','夕日'],['kouri','古宇利大橋'],['taco','タコライス'],['soba','沖縄そば'],['food','沖縄料理'],['blueseal','ブルーシール'],['icecream','ブルーシール'],
   ['tart','紅いもタルト'],['souvenir','紅いもタルト'],['flight','飛行機']];
-const imgSrc = v => !v || v === '-' ? '' : v.startsWith('media:') ? mediaSrc(v.slice(6)) : /^https:\/\//.test(v) ? v : v.startsWith('data:image/') ? v : LIB.some(([k]) => k === v) ? `img/${v}.webp` : '';
+const imgSrc = v => !v || v === '-' || (typeof BROKEN !== 'undefined' && BROKEN.has(v)) ? '' : v.startsWith('media:') ? mediaSrc(v.slice(6)) : /^https:\/\//.test(v) ? v : v.startsWith('data:image/') ? v : LIB.some(([k]) => k === v) ? `img/${v}.webp` : '';
 const RULES = [
   [/美ら海|水族館|ジンベエ|マンタ/, ['whale','tank','aquarium']],
   [/ウミカジ|瀬長/, ['umikaji','umikaji2']],
@@ -2335,7 +2335,7 @@ async function migrateLegacy(){
    1) a linked page's own representative photo (og:image, fetched by our server)
    2) the photo of the Japanese Wikipedia article whose title matches the name
    Nothing is used when neither matches, so no unrelated photo is ever shown. */
-const WEB = ls.get('okt-webphoto2', {});
+var WEB = ls.get('okt-webphoto2', {});
 const saveWEB = () => ls.set('okt-webphoto2', WEB);
 const cleanName = n => (n || '').replace(/^.*｜/, '').replace(/(で|を|に)(集合|ランチ|探検|ドライブ|食べる|見る|買う|散歩|行く|挑戦).*$/, '').replace(/ ?(チェックイン|チェックアウト)$/, '').replace(/[「」『』]/g, '').trim();
 async function wikiPhoto(name){
@@ -2353,13 +2353,20 @@ async function wikiPhoto(name){
 }
 async function webPhoto(name, url){
   const key = (url || '') + '|' + cleanName(name);
-  if (key in WEB) return WEB[key];
+  if (key in WEB && !(WEB[key] && BROKEN.has(WEB[key].u))) return WEB[key];
   let hit = null;
-  if (url && /^https:\/\//.test(url) && Sync.signedIn) { const u = await Sync.ogImage(url); if (u) hit = {u, page:url, src:'公式サイト'}; }
-  if (!hit) hit = await wikiPhoto(name);
+  if (url && /^https:\/\//.test(url) && Sync.signedIn) { const u = await Sync.ogImage(url); if (u && !BROKEN.has(u)) hit = {u, page:url, src:/tabelog|gnavi|hotpepper/.test(url) ? 'お店のページ' : '公式サイト'}; }
+  if (!hit) { hit = await wikiPhoto(name); if (hit && BROKEN.has(hit.u)) hit = null; }
   WEB[key] = hit; saveWEB(); return hit;
 }
-const creditOf = u => !u ? '' : /upload\.wikimedia\.org/.test(u) ? 'Wikipedia' : /^https:/.test(u) ? 'リンク先' : '';
+// A web photo that fails to load is remembered as broken: the tile falls back to text and a new photo is looked for.
+var BROKEN = new Set(ls.get('okt-broken-img', []));
+addEventListener('error', e => { const el = e.target; if (!(el instanceof HTMLImageElement)) return; const u = el.getAttribute('src') || '';
+  if (!/^https:\/\//.test(u) || u.startsWith(location.origin) || BROKEN.has(u)) return;
+  BROKEN.add(u); ls.set('okt-broken-img', [...BROKEN].slice(-300)); el.style.visibility = 'hidden';
+  for (const k in WEB) if (WEB[k] && WEB[k].u === u) WEB[k] = null; saveWEB();
+  clearTimeout(window.__brk); window.__brk = setTimeout(rebuildAll, 600); }, true);
+var creditOf = u => !u || BROKEN.has(u) ? '' : /upload\.wikimedia\.org/.test(u) ? 'Wikipedia' : /k-img\.com|gnst\.jp/.test(u) ? 'お店のページ' : /^https:/.test(u) ? 'リンク先' : '';
 // Shared items without a photo get one found once (by whichever device sees it first); everyone then sees the same photo.
 const triedWeb = new Set(ls.get('okt-photo-tried2', []));
 let fillingWeb = false;
@@ -2367,18 +2374,20 @@ async function fillWebPhotos(){
   if (fillingWeb || !Sync.signedIn) return; fillingWeb = true;
   try {
     const jobs = [];
-    for (const s of P.stops) if (s.spot !== false && !s.img && !autoImg(s.title) && !triedWeb.has(s.id)) jobs.push(['plan', s.id, s.title, s.url]);
-    for (const i of P.ideas) if (!i.img && !autoImg(i.name) && !triedWeb.has(i.id)) jobs.push(['spot', i.id, i.name, i.url]);
-    for (const w of wishes) if (!w.img && !autoImg(w.t) && !triedWeb.has(w.id)) jobs.push(['wish', w.id, w.t, '']);
-    for (const [kind, id, name, url] of jobs.slice(0, 8)) {
-      triedWeb.add(id); ls.set('okt-photo-tried2', [...triedWeb].slice(-500));
+    const need = (img, name) => img ? BROKEN.has(img) : !autoImg(name);
+    const tk = (id, url, img) => id + '|' + (url || '') + '|' + (img || '');
+    for (const s of P.stops) if (s.spot !== false && need(s.img, s.title) && !triedWeb.has(tk(s.id, s.url, s.img))) jobs.push(['plan', s.id, s.title, s.url, s.img]);
+    for (const i of P.ideas) if (need(i.img, i.name) && !triedWeb.has(tk(i.id, i.url, i.img))) jobs.push(['spot', i.id, i.name, i.url, i.img]);
+    for (const w of wishes) if (need(w.img, w.t) && !triedWeb.has(tk(w.id, '', w.img))) jobs.push(['wish', w.id, w.t, '', w.img]);
+    for (const [kind, id, name, url, old] of jobs.slice(0, 8)) {
+      triedWeb.add(tk(id, url, old)); ls.set('okt-photo-tried2', [...triedWeb].slice(-500));
       const hit = await webPhoto(name, url);
-      if (hit) Sync.save(kind, id, kind === 'wish' ? {text:name, img:hit.u} : {img:hit.u}, {photoOnly:true});
+      if (hit && hit.u !== old) Sync.save(kind, id, kind === 'wish' ? {text:name, img:hit.u} : {img:hit.u}, {photoOnly:true});
     }
   } finally { fillingWeb = false; }
 }
 // Daily cards that had no photo
-const cardWeb = c => { const k = 'card:' + c.n; if (k in WEB) return WEB[k];
+var cardWeb = c => { const k = 'card:' + c.n; if (k in WEB) return WEB[k];
   if (!cardWeb.busy) { cardWeb.busy = true; (async () => { for (const x of cards.filter(x => !x.img && !(('card:' + x.n) in WEB))) { const link = (x.links || [])[0]; WEB['card:' + x.n] = await wikiPhoto(x.title) || (link ? await webPhoto(x.title, link[1]) : null); saveWEB(); } cardWeb.busy = false; lastMinute = ''; render(); })(); }
   return undefined; };
 
