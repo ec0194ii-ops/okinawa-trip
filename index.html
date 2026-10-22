@@ -879,6 +879,15 @@ html.standalone body{overscroll-behavior-y:none}
 .ws-cap{position:absolute;left:0;right:0;bottom:22%;margin:0;text-align:center;color:#fff;font:700 clamp(24px,7vw,34px)/1.3 "Shippori Mincho B1",serif;letter-spacing:.06em;text-shadow:0 2px 18px rgba(0,30,50,.5);animation:fadeup .9s 1.4s ease both}
 @media (prefers-reduced-motion: reduce){.ptr-w,.ws-bob,.ws-tail{animation:none!important}}
 
+/* navigation to the next stop */
+.navi{align-self:flex-start;display:inline-flex;align-items:center;gap:7px;margin-top:6px;padding:9px 14px 9px 11px;border-radius:999px;background:rgba(255,255,255,.94);color:#0f2a3a;text-decoration:none;font-size:13px;box-shadow:0 6px 18px rgba(0,20,40,.25);max-width:100%;animation:fadeup .5s ease both}
+.navi svg{width:15px;height:15px;color:#2f7cf6;transform:rotate(45deg);flex:none}
+.navi span{font-weight:800;font-size:11px;letter-spacing:.14em;color:#2f7cf6}
+.navi b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.navi i{font-style:normal;opacity:.6}
+.navi:active{transform:scale(.97)}
+.lk .nav-a{color:#2f7cf6}
+
 nav button{border:0;background:transparent;font:inherit;font-size:11px;letter-spacing:.12em;color:var(--soft);padding:6px 4px;display:flex;flex-direction:column;align-items:center}
 nav button[aria-current="page"]{color:var(--ink);font-weight:700}
 nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;width:5px;height:5px;border-radius:50%;background:var(--hibiscus)}
@@ -1597,7 +1606,7 @@ function renderPlan(){
     return slot(k) + drive + `<div class="stop ${cls}"><time>${s.t || '未定'}</time><div class="scard">${imgFor(s) ? `<img src="${imgFor(s)}" alt="" loading="lazy">` : ''}<div class="in">
       <div class="meta"><span class="pill ${statusPill(s.status)}">${s.status}</span>${s.by ? famChip(s.by) : ''}</div>
       <h3>${esc(s.title)}</h3>${s.note ? `<p>${esc(s.note)}</p>` : ''}${kidsOn ? kidTipHTML(s) : ''}
-      ${safeUrl(s.url) || s.spot ? `<div class="lk">${creditOf(s.img) ? `<span class="credit-i">写真: ${creditOf(s.img)}</span>` : ''}${safeUrl(s.url) ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">HP ↗</a>` : ''}${s.spot ? `<a href="${mapUrl(s.title.replace(/ チェックイン|で集合|でランチ.*$/,''))}" target="_blank" rel="noopener">地図 ↗</a>` : ''}</div>` : ''}
+      ${safeUrl(s.url) || s.spot || navDest(s) ? `<div class="lk">${creditOf(s.img) ? `<span class="credit-i">写真: ${creditOf(s.img)}</span>` : ''}${safeUrl(s.url) ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">HP ↗</a>` : ''}${s.spot ? `<a href="${mapUrl(s.title.replace(/ チェックイン|で集合|でランチ.*$/,''))}" target="_blank" rel="noopener">地図 ↗</a>` : ''}${navDest(s) ? `<a class="nav-a" href="${navUrl(navDest(s))}" target="_blank" rel="noopener">ナビ ↗</a>` : ''}</div>` : ''}
       <div class="acts"><button type="button" data-edit-stop="${s.id}">✎ 編集</button><button type="button" class="ask" data-add-idea="${s.id}">＋ 場所候補</button></div>
       ${ideas.length ? `<div class="ideas"><div class="ideas-h">場所候補 ${ideas.length}<small>選ばなくてもOK</small></div><div class="irow">${ideas.map(ideaCard).join('')}<button type="button" class="idea add" data-add-idea="${s.id}"><b>＋</b>場所候補を追加</button></div></div>` : ''}
     </div></div></div>`;
@@ -2616,6 +2625,32 @@ document.addEventListener('click', e => {
 });
 
 if (window.OKT_ENDPOINT) window.__oktMotion = { swimWhale };
+
+
+/* ---------- one-tap navigation to the next stop (Google Maps directions) ---------- */
+function navDest(s){
+  if (!s || /SKY\d|フライト|チェックアウト/.test(s.title || '')) return '';
+  const pk = P.ideas.find(i => i.stop === s.id && i.picked);
+  if (pk) return pk.mapQuery || pk.map || pk.name;
+  const t = (s.title || '').replace(/^.*｜/, '').replace(/ ?チェックイン$/, '').replace(/(で集合|でランチ|でディナー).*$/, '').trim();
+  // generic titles ("沖縄料理のディナー", "本部周辺でランチ") have no single place until a candidate is chosen
+  if (!t || /ランチ|ディナー|夜ごはん|朝ごはん|休憩|移動|近く|周辺/.test(t)) return '';
+  return s.mapQuery || t;
+}
+function navUrl(q){ return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + encodeURIComponent(/沖縄/.test(q) ? q : q + ' 沖縄'); }
+{ const _rh = renderHero; renderHero = function(d){ _rh.apply(this, arguments);
+  const box = document.querySelector('#hero .mg-now') || document.querySelector('.mg-now'); if (!box) return;
+  const lp = livePlan(), next = lp.find(e => e.at && e.at > d);
+  const dest = next ? navDest(next) : '';
+  let a = $('naviBtn');
+  if (!dest) { if (a) a.remove(); return; }
+  if (!a) { a = document.createElement('a'); a.id = 'naviBtn'; a.className = 'navi'; a.target = '_blank'; a.rel = 'noopener'; box.appendChild(a); }
+  const href = navUrl(dest); if (a.getAttribute('href') !== href) a.href = href;
+  const name = next.label.replace(/^.*｜/, '').replace(/^.*（(.+)）$/, '$1');
+  const txt = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 21l8-4 8 4z" fill="currentColor"/></svg><span>ナビ</span><b>${esc(name)}へ</b><i>↗</i>`;
+  if (a.dataset.k !== txt) { a.dataset.k = txt; a.innerHTML = txt; }
+}; }
+if (window.OKT_ENDPOINT) window.__oktNav = { hero: d => renderHero(d), navDest, navUrl, stops: () => P.stops };
 
 /* ---------- wiring ---------- */
 var booted = true;
