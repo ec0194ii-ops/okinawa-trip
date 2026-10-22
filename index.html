@@ -6,7 +6,9 @@
 <meta name="theme-color" content="#0f2a3a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Okinawa Trip">
+<meta name="apple-mobile-web-app-title" content="Okinawa">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f2a3a'/%3E%3Cpath d='M8 40q8-8 16 0t16 0 16 0' stroke='%237fd6d2' stroke-width='4' fill='none'/%3E%3C/svg%3E">
@@ -818,6 +820,39 @@ nav button[data-badge]::before{content:attr(data-badge);position:absolute;top:0;
 .credit{position:absolute;right:8px;bottom:6px;font-size:9.5px;color:#fff;background:rgba(5,20,30,.5);border-radius:5px;padding:0 6px}
 .credit-i{font-size:11px;color:var(--soft);font-weight:400!important}
 
+/* rainy-day plan */
+.rain{border:1px solid var(--line);border-radius:18px;background:var(--paper);overflow:hidden}
+.rain.wet{background:linear-gradient(160deg,#e3f1f6,var(--paper) 60%);border-color:#bcdbe6}
+.rain-h{display:flex;align-items:center;gap:10px;padding:12px 14px;width:100%;text-align:left;background:none;border:0;color:var(--ink);font:inherit}
+.rain-h b{display:block;font-size:14px}.rain-h small{display:block;font-size:11.5px;color:var(--soft);margin-top:2px}
+.rain-h>div{flex:1}.rain-h i{font-style:normal;font-size:18px;color:var(--soft)}
+.rain-ic{width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--sea) 14%,transparent);font-size:17px}
+.rain.wet .rain-ic{animation:drip 2.4s ease-in-out infinite}
+@keyframes drip{50%{transform:translateY(2px)}}
+.rain .irow{padding:0 12px 4px}
+.rain .note,.rain-p{margin:0;padding:2px 14px 12px;font-size:11.5px;color:var(--soft)}
+.rcard{width:200px}.rcard .in{display:flex;flex-direction:column;gap:4px;padding:9px 10px 10px}
+.rcard .in b{font-size:13.5px}.rcard .in p{margin:0;font-size:11.5px;line-height:1.5;color:var(--ink)}
+.r-area{font-size:10.5px;color:var(--soft)}
+.r-act{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto;padding-top:4px}
+.r-act a{font-size:11.5px;color:var(--sea);text-decoration:none;font-weight:700}
+.r-done{font-size:11px;color:var(--soft)}
+.fc-alt{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--sea) 10%,var(--paper));font-size:12.5px}
+.fc-alt button{border:0;background:var(--ink);color:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:12px;font-weight:700}
+/* home-screen app */
+.install{display:flex;gap:14px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:18px;background:var(--paper)}
+.install>img{border-radius:14px;flex:none;box-shadow:0 4px 14px rgba(15,42,58,.18)}
+.install>div{flex:1;min-width:0}
+.ins-steps{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.5}
+.ins-steps small{display:block;font-size:11px;color:var(--soft)}
+.share-ic{display:inline-grid;place-items:center;width:20px;height:20px;margin:0 3px;vertical-align:-4px;color:#2f7cf6}.share-ic svg{width:18px;height:18px}
+.install-ban{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-radius:18px;background:rgba(15,42,58,.94);color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:fadeup .5s ease both;max-width:520px;margin:0 auto}
+.install-ban img{border-radius:10px;flex:none}
+.install-ban p{margin:0;flex:1;min-width:0;font-size:12.5px;line-height:1.35}.install-ban p b{display:block;font-size:13.5px}.install-ban p span{opacity:.8}
+.install-ban .mini-btn{background:#fff;color:var(--ink);border-color:#fff}
+.install-ban .x{border:0;background:none;color:#fff;opacity:.7;font-size:20px;width:28px;height:28px;padding:0}
+html.standalone body{overscroll-behavior-y:none}
+
 nav button{border:0;background:transparent;font:inherit;font-size:11px;letter-spacing:.12em;color:var(--soft);padding:6px 4px;display:flex;flex-direction:column;align-items:center}
 nav button[aria-current="page"]{color:var(--ink);font-weight:700}
 nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;width:5px;height:5px;border-radius:50%;background:var(--hibiscus)}
@@ -877,6 +912,11 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
     <p class="note" id="fcNote"></p>
   </section>
 
+  <section class="sec" id="installSec" hidden>
+    <div class="sec-h"><h2>ホーム画面に置く</h2><span>アプリみたいに全画面で開けます</span></div>
+    <div class="install"><img src="icon-180.png" alt="" width="60" height="60"><div id="installBody"></div></div>
+  </section>
+
   <section class="sec" id="reqSec">
     <div class="sec-h"><h2>アプリへのリクエスト</h2><span>匿名で送れます</span></div>
     <div class="req">
@@ -895,13 +935,14 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
     <div class="log" id="planLog"></div>
     <div class="days" id="planDays" role="group" aria-label="日付を選ぶ"></div>
     <div class="dayhead"><h2 id="planTitle"></h2><p id="planSub"></p></div>
+    <div class="rain" id="rainBox" hidden></div>
     <button type="button" class="add-top" id="addTop"><b>＋</b>予定を追加</button>
     <button type="button" class="kids-b" id="kidsBtn" aria-pressed="false"><span class="kb-ic" aria-hidden="true"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="13" cy="24" r="10" fill="#FFDDB8"/><path d="M3.2 22.8C3 16.5 7.5 13 13 13s10 3.5 9.8 9.8c-2-2.2-5-3.4-8-3.4-1.4 0-2.4-.6-2.9-1.6-1.2 2.2-4 3.6-8.7 5z" fill="#5A3B2A"/><circle cx="9.6" cy="25" r="1.5" fill="#3B2A20"/><circle cx="16.4" cy="25" r="1.5" fill="#3B2A20"/><ellipse cx="7.4" cy="28.2" rx="1.8" ry="1.1" fill="#FF8F9C" opacity=".75"/><ellipse cx="18.6" cy="28.2" rx="1.8" ry="1.1" fill="#FF8F9C" opacity=".75"/><path d="M11 28.2q2 2.6 4 0z" fill="#E8505B"/><circle cx="27.5" cy="25.5" r="9.5" fill="#FFE3C6"/><circle cx="20.5" cy="18.5" r="3" fill="#7A4A2E"/><circle cx="34.5" cy="18.5" r="3" fill="#7A4A2E"/><path d="M18 25c0-6 4.2-9.5 9.5-9.5S37 19 37 25c-2-3-5.6-4.6-9.5-4.6S20 22 18 25z" fill="#7A4A2E"/><path d="M23.6 26.2q1.6-1.8 3.2 0M28.2 26.2q1.6-1.8 3.2 0" stroke="#3B2A20" stroke-width="1.4" fill="none" stroke-linecap="round"/><ellipse cx="22.5" cy="29.4" rx="1.7" ry="1.1" fill="#FF8F9C" opacity=".75"/><ellipse cx="32.5" cy="29.4" rx="1.7" ry="1.1" fill="#FF8F9C" opacity=".75"/><path d="M26 29.4q1.5 2.2 3 0z" fill="#E8505B"/></svg></span><span><b>こどもたちが楽しめるポイント</b><small id="kidsSub">タップで、行く場所ごとに表示</small></span></button>
     <div class="kid-day" id="kidDay" hidden></div>
     <div class="ribbon" id="planRibbon" aria-hidden="true"></div>
     <div class="tl" id="planTl"></div>
     <section class="bucket" id="planBucket"></section>
-    <p class="note">移動時間は目安です。候補は選ばなくても大丈夫。試作では変更はこの端末にだけ保存されます（本体では家族全員に共有されます）。</p>
+    <p class="note">移動時間は目安です。候補は選ばなくても大丈夫。変更はすぐに家族全員に共有されます。</p>
   </div>
 
   <div class="view" id="v-wish" hidden>
@@ -989,6 +1030,7 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
   </div>
 </div>
 <canvas id="burst" aria-hidden="true"></canvas>
+<div class="install-ban" id="installBan" hidden><img src="icon-180.png" alt="" width="40" height="40"><p><b>ホーム画面に置けます</b><span>アイコンからアプリみたいに開けます</span></p><button type="button" class="mini-btn" data-install-how>やり方</button><button type="button" class="x" data-install-close aria-label="閉じる">×</button></div>
 
 <!-- FORECAST:START — updated automatically from the Japan Meteorological Agency. status: "pending" until the trip dates appear in the forecast. -->
 <script type="application/json" id="forecast">
@@ -2061,7 +2103,7 @@ $('gateForm').addEventListener('submit', async e => {
   try {
     await Sync.login(fam, pw);
     $('gatePw').value = ''; $('gate').hidden = true; document.body.style.overflow = '';
-    if (!ls.get(TUT_KEY, false)) setTimeout(() => coach(TOUR, true), 400);
+    if (!ls.get(TUT_KEY, false)) { if (window.STANDALONE) { ls.set(TUT_KEY, true); toastNote('ホーム画面から開けるようになりました！'); } else setTimeout(() => coach(TOUR, true), 400); }
   } catch (err) {
     $('gateErr').textContent = err.status === 401 ? '合言葉が違います。家族で決めた合言葉を、ひらがなで入れてください。' : err.status === 429 ? '入室の試行が続いたので、10分ほど待ってからもう一度どうぞ。' : 'つながりませんでした。通信を確認して、もう一度押してください。';
     $('gateForm').classList.remove('shake'); void $('gateForm').offsetWidth; $('gateForm').classList.add('shake');
@@ -2391,13 +2433,95 @@ var cardWeb = c => { const k = 'card:' + c.n; if (k in WEB) return WEB[k];
   if (!cardWeb.busy) { cardWeb.busy = true; (async () => { for (const x of cards.filter(x => !x.img && !(('card:' + x.n) in WEB))) { const link = (x.links || [])[0]; WEB['card:' + x.n] = await wikiPhoto(x.title) || (link ? await webPhoto(x.title, link[1]) : null); saveWEB(); } cardWeb.busy = false; lastMinute = ''; render(); })(); }
   return undefined; };
 
+
+/* ---------- rainy-day plan: indoor places for the day, one tap to add as a candidate ---------- */
+var RAIN_SPOTS = [
+  {name:'DMMかりゆし水族館', url:'https://kariyushi-aquarium.com/', days:[0,1,3], area:'豊見城 · ウミカジテラスから車で10分ほど', note:'館内はすべて屋内。生きものにさわれる「ふれあい広場」やフクロウの森も。', kid:'目の前を泳ぐ魚に大興奮。生きものにそっとさわれる広場も。', typo:'水族館'},
+  {name:'沖縄県立博物館・美術館', url:'https://okimu.jp/', days:[0,1], area:'那覇・新都心 · ウミカジテラスから車で25分ほど', note:'「ふれあい体験室」で、体験キットを自由に使って遊びながら沖縄を知れる。', kid:'さわってOKの体験キットで、自分で見つける楽しさ。', typo:'博物館'},
+  {name:'琉球ガラス村', url:'https://www.ryukyu-glass.co.jp/', days:[1], area:'糸満 · ウミカジテラスから車で25分ほど', note:'入場無料・年中無休。予約なしでできる絵付けなどの体験も。', kid:'キラキラのガラスがいっぱい。色をぬる体験も。', typo:'ガラス'},
+  {name:'体験王国むら咲むら', url:'https://murasakimura.com/', days:[1], area:'読谷 · ハレクラニから車で35分ほど', note:'シーサーの色付けやキャンドル作りなど、屋内の手作り体験がたくさん。', kid:'自分だけのシーサーに色ぬり。おみやげにもなるよ。', typo:'体験'},
+  {name:'ナゴパイナップルパーク', url:'https://www.nagopine.com/', days:[2], area:'名護 · 美ら海から車で35分ほど · 一部屋外', note:'パイナップル号や恐竜の森。パイナップルのスイーツも。', kid:'パイナップルの形の乗り物に乗れる！動く恐竜にもびっくり。', typo:'パイン'}
+];
+RAIN_SPOTS.forEach(r => KID_TIPS.push([new RegExp(r.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), [r.kid]]));
+var rainOpen = {};
+function rainOf(d){
+  const x = (fc.days || []).find(z => z.date === TRIP_DATES[d]); if (!x) return null;
+  const pop = parseInt(x.pop, 10);
+  return (x.icon === 'rain' || /雨/.test(x.weather || '') || pop >= 50) ? x : null;
+}
+function rainPhoto(r){
+  const k = (r.url || '') + '|' + cleanName(r.name);
+  if (k in WEB) return WEB[k] && !BROKEN.has(WEB[k].u) ? WEB[k] : null;
+  if (!rainPhoto.busy?.[k]) { (rainPhoto.busy ||= {})[k] = 1; webPhoto(r.name, r.url).then(() => { if (view === 'plan') renderRain(); }); }
+  return null;
+}
+function renderRain(){
+  const box = $('rainBox'); if (!box) return;
+  const d = planDay, list = RAIN_SPOTS.filter(r => r.days.includes(d));
+  const wet = rainOf(d), open = wet || rainOpen[d];
+  box.className = 'rain' + (wet ? ' wet' : '') + (open ? ' open' : '');
+  if (!list.length && !wet) { box.innerHTML = ''; box.hidden = true; return; }
+  box.hidden = false;
+  const head = wet ? `<div class="rain-h"><span class="rain-ic">☔</span><div><b>${TRIP_DATES[d]}は雨の予報${wet.pop !== '' && wet.pop != null ? `（降水${esc(wet.pop)}%）` : ''}</b><small>屋内で子どもも楽しめる場所を、候補に入れておけます。</small></div></div>`
+    : `<button type="button" class="rain-h rain-tg" data-rain-toggle aria-expanded="${!!open}"><span class="rain-ic">☂</span><div><b>雨だったら？</b><small>${open ? '屋内で子どもも楽しめる場所' : 'タップで、屋内で楽しめる場所を表示'}</small></div><i aria-hidden="true">${open ? '−' : '＋'}</i></button>`;
+  if (!open) { box.innerHTML = head; return; }
+  const have = new Set(P.ideas.filter(i => i.d === d).map(i => i.name));
+  const extra = d === 2 ? `<p class="rain-p">美ら海水族館はもともと屋内なので、雨でもそのまま楽しめます。</p>` : '';
+  box.innerHTML = head + extra + `<div class="irow">${list.map(r => { const ph = rainPhoto(r);
+    return `<article class="idea rcard"><div class="pic">${ph ? `<img src="${esc(ph.u)}" alt="" loading="lazy">` : typoTile(esc(r.typo), 'place')}</div>
+      <div class="in"><b>${esc(r.name)}</b><small class="r-area">${esc(r.area)}</small><p>${esc(r.note)}</p>${kidsOn ? `<p class="bub-mini">${esc(r.kid)}</p>` : ''}
+      <div class="r-act"><a href="${esc(r.url)}" target="_blank" rel="noopener">HP ↗</a>${have.has(r.name) ? '<span class="r-done">候補に追加済み ✓</span>' : `<button type="button" class="mini-btn" data-rain-add="${esc(r.name)}">候補に入れる</button>`}</div></div></article>`; }).join('')}</div>
+    <p class="note">移動時間は目安です。営業時間や休館日は各HPで確認してください。</p>`;
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-rain-toggle]'); if (t) { rainOpen[planDay] = !rainOpen[planDay]; renderRain(); return; }
+  const a = e.target.closest('[data-rain-add]');
+  if (a) { const r = RAIN_SPOTS.find(x => x.name === a.dataset.rainAdd); if (!r) return;
+    const ph = rainPhoto(r);
+    Sync.create('spot', {...ideaPayload({d:planDay, stop:'', name:r.name, note:r.note, url:r.url, img:ph ? ph.u : '', typo:r.typo, cat:'place'}), likes:{[me]:true}, picked:false});
+    toastNote(`「${r.name}」を「この日のどこかで」に入れました`); return; }
+  const g = e.target.closest('[data-rain-go]');
+  if (g) { const d = +g.dataset.rainGo; show('plan', true); planDay = d; rainOpen[d] = true; renderPlan(); setTimeout(() => $('rainBox')?.scrollIntoView({behavior:'smooth', block:'center'}), 250); }
+});
+{ const _rp = renderPlan; renderPlan = function(){ _rp.apply(this, arguments); renderRain(); }; }
+{ const _rf = renderForecast; renderForecast = function(){ _rf.apply(this, arguments);
+  const wet = [0, 1, 2, 3].filter(rainOf); if (!wet.length) return;
+  $('fc').insertAdjacentHTML('beforeend', `<div class="fc-alt"><span>☔ ${wet.map(d => TRIP_DATES[d]).join('・')}は雨の予報。</span>${wet.filter(d => RAIN_SPOTS.some(r => r.days.includes(d)) || d === 2).map(d => `<button type="button" data-rain-go="${d}">${TRIP_DATES[d]}の屋内プラン →</button>`).join('')}</div>`); }; }
+
+/* ---------- home-screen app ---------- */
+var STANDALONE = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+var IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+var installEvt = null;
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderInstall(); });
+addEventListener('appinstalled', () => { installEvt = null; ls.set('okt-install-dismissed', true); renderInstall(); toastNote('ホーム画面に追加しました！'); });
+function installSteps(){
+  return IOS ? `<ol class="ins-steps"><li><b>Safari</b>でこのページを開く<small>LINEなどのアプリ内で開いているときは、右下や右上のメニューから「Safariで開く」</small></li><li>画面下の<b>共有ボタン</b><span class="share-ic" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M10 2v11M6 6l4-4 4 4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9H4v9h12V9h-1" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span>をタップ</li><li>下にスクロールして<b>「ホーム画面に追加」</b>→ 右上の<b>「追加」</b></li><li>ホーム画面の<b>Okinawa</b>アイコンから開く<small>最初の1回だけ、もう一度合言葉を入れてください</small></li></ol>`
+    : `<ol class="ins-steps"><li><b>Chrome</b>でこのページを開く</li><li>右上の<b>︙メニュー</b>→<b>「ホーム画面に追加」</b>（または「アプリをインストール」）</li><li>ホーム画面の<b>Okinawa</b>アイコンから開く<small>最初の1回だけ、もう一度合言葉を入れてください</small></li></ol>`;
+}
+function renderInstall(){
+  const sec = $('installSec'); if (!sec) return;
+  sec.hidden = STANDALONE;
+  $('installBody').innerHTML = (installEvt ? `<button type="button" class="btn" data-install-now>ホーム画面に追加する</button>` : installSteps());
+  const ban = $('installBan'), show_ = !STANDALONE && Sync.signedIn && ls.get(TUT_KEY, false) && !ls.get('okt-install-dismissed', false) && view === 'home';
+  ban.hidden = !show_;
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-install-now]')) { if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; renderInstall(); }); } return; }
+  if (e.target.closest('[data-install-close]')) { ls.set('okt-install-dismissed', true); renderInstall(); return; }
+  if (e.target.closest('[data-install-how]')) { ls.set('okt-install-dismissed', true); renderInstall(); $('installSec').scrollIntoView({behavior:'smooth', block:'start'}); return; }
+});
+if (STANDALONE) document.documentElement.classList.add('standalone');
+{ const _sh = show; show = function(){ _sh.apply(this, arguments); renderInstall(); }; }
+if (window.OKT_ENDPOINT) window.__oktRain = { setFc: v => { fc = v; renderForecast(); } };
+
 /* ---------- wiring ---------- */
 var booted = true;
 function rebuildAll(){
   rebuildP(); rebuildWishes(); rebuildArrivals();
   lastKey = ''; lastMinute = ''; render(); renderNotices(); renderReq();
   if (view === 'plan') renderPlan(); if (view === 'wish') renderWish(); if (view === 'spots') renderSpots();
-  setTimeout(fillWebPhotos, 1500);
+  setTimeout(fillWebPhotos, 1500); renderInstall();
 }
 Sync.on(why => {
   if (why === 'signed-out') { showGate('入室の期限が切れました。合言葉でもう一度入室してください。'); renderStatus(); return; }
