@@ -50,7 +50,7 @@
 
   /* ---------- writes ---------- */
   function enqueue(op){ outbox.push({ ...clone(op), qid:uuid() }); persist(); emit('local'); void drain(); }
-  function save(kind, id, patch, opts = {}){ enqueue({ action:'save', kind, id, patch, deleted:!!opts.deleted, create:!!opts.create, imported:!!opts.imported }); }
+  function save(kind, id, patch, opts = {}){ enqueue({ action:'save', kind, id, patch, deleted:!!opts.deleted, create:!!opts.create, imported:!!opts.imported, photoOnly:!!opts.photoOnly }); }
   async function drain(){
     if (busy || !auth) return; busy = true;
     try {
@@ -61,7 +61,7 @@
           for (let attempt = 0; attempt < 4 && !ok; attempt++) {
             const cur = records.get(op.id);
             const payload = merge(cur ? cur.payload : {}, op.patch);
-            const body = { action:'save', kind:op.kind, id:op.id, payload, version:cur ? cur.version : 0, ...(op.deleted ? { deleted:true } : {}), ...(op.imported ? { imported:true } : {}) };
+            const body = { action:'save', kind:op.kind, id:op.id, payload, version:cur ? cur.version : 0, ...(op.deleted ? { deleted:true } : {}), ...(op.imported ? { imported:true } : {}), ...(op.photoOnly ? { photoOnly:true } : {}) };
             if (op.deleted && !cur) { ok = true; break; }            // nothing on the server to delete
             try { const res = await api(body); if (res.record) records.set(res.record.id, res.record); ok = true; }
             catch (e) {
@@ -147,6 +147,7 @@
     },
     async logout(){ try { await api({ action:'logout' }); } catch {} auth = null; localStorage.removeItem(K.session); emit('signed-out'); },
     refresh:() => pull(true), drain,
+    ogImage:(url) => api({ action:'og_image', url }).then(d => d.image || '').catch(() => ''),
     media:{
       list:() => api({ action:'media_list' }),
       url:(path) => api({ action:'media_get', path }).then(d => d.url),

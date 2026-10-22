@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Okinawa Trip">
 <meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f2a3a'/%3E%3Cpath d='M8 40q8-8 16 0t16 0 16 0' stroke='%237fd6d2' stroke-width='4' fill='none'/%3E%3C/svg%3E">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;-webkit-text-size-adjust:100%}[hidden]{display:none!important}img{max-width:100%}</style>
 <title>Okinawa Trip</title>
@@ -814,6 +815,9 @@ nav button[data-badge]::before{content:attr(data-badge);position:absolute;top:0;
 .thumb .upst.fail{background:var(--hibiscus)}
 .thumb.st-up img,.thumb.st-wait img{opacity:.7}
 
+.credit{position:absolute;right:8px;bottom:6px;font-size:9.5px;color:#fff;background:rgba(5,20,30,.5);border-radius:5px;padding:0 6px}
+.credit-i{font-size:11px;color:var(--soft);font-weight:400!important}
+
 nav button{border:0;background:transparent;font:inherit;font-size:11px;letter-spacing:.12em;color:var(--soft);padding:6px 4px;display:flex;flex-direction:column;align-items:center}
 nav button[aria-current="page"]{color:var(--ink);font-weight:700}
 nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;width:5px;height:5px;border-radius:50%;background:var(--hibiscus)}
@@ -1208,7 +1212,7 @@ function renderToday(d){
 }
 
 /* ---------- daily cards ---------- */
-const visual = c => c.img ? `<img src="img/${c.img}.webp" alt="">` : `<div class="typo cat-${c.cat}"><span>${c.typo}</span></div>`;
+const visual = c => { if (c.img) return `<img src="img/${c.img}.webp" alt="">`; const w = typeof cardWeb === 'function' ? cardWeb(c) : null; return w ? `<img src="${esc(w.u)}" alt=""><span class="credit">写真: ${esc(w.src)}</span>` : `<div class="typo cat-${c.cat}"><span>${c.typo}</span></div>`; };
 const mapUrl = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
 function cardHTML(c, sealed, tag='div'){
   const head = `<div class="pic">${visual(c)}${sealed ? `<div class="seal"><b>${cardDate(c)} のカード</b><span>タップで開く</span></div>` : ''}</div>`;
@@ -1524,7 +1528,7 @@ function renderPlan(){
     return slot(k) + drive + `<div class="stop ${cls}"><time>${s.t || '未定'}</time><div class="scard">${imgFor(s) ? `<img src="${imgFor(s)}" alt="" loading="lazy">` : ''}<div class="in">
       <div class="meta"><span class="pill ${statusPill(s.status)}">${s.status}</span>${s.by ? famChip(s.by) : ''}</div>
       <h3>${esc(s.title)}</h3>${s.note ? `<p>${esc(s.note)}</p>` : ''}${kidsOn ? kidTipHTML(s) : ''}
-      ${safeUrl(s.url) || s.spot ? `<div class="lk">${safeUrl(s.url) ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">HP ↗</a>` : ''}${s.spot ? `<a href="${mapUrl(s.title.replace(/ チェックイン|で集合|でランチ.*$/,''))}" target="_blank" rel="noopener">地図 ↗</a>` : ''}</div>` : ''}
+      ${safeUrl(s.url) || s.spot ? `<div class="lk">${creditOf(s.img) ? `<span class="credit-i">写真: ${creditOf(s.img)}</span>` : ''}${safeUrl(s.url) ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">HP ↗</a>` : ''}${s.spot ? `<a href="${mapUrl(s.title.replace(/ チェックイン|で集合|でランチ.*$/,''))}" target="_blank" rel="noopener">地図 ↗</a>` : ''}</div>` : ''}
       <div class="acts"><button type="button" data-edit-stop="${s.id}">✎ 編集</button><button type="button" class="ask" data-add-idea="${s.id}">＋ 場所候補</button></div>
       ${ideas.length ? `<div class="ideas"><div class="ideas-h">場所候補 ${ideas.length}<small>選ばなくてもOK</small></div><div class="irow">${ideas.map(ideaCard).join('')}<button type="button" class="idea add" data-add-idea="${s.id}"><b>＋</b>場所候補を追加</button></div></div>` : ''}
     </div></div></div>`;
@@ -2326,12 +2330,65 @@ async function migrateLegacy(){
   ls.set('okt-migrated-v1', true);
 }
 
+
+/* ---------- real photos from the web (no PC needed) ----------
+   1) a linked page's own representative photo (og:image, fetched by our server)
+   2) the photo of the Japanese Wikipedia article whose title matches the name
+   Nothing is used when neither matches, so no unrelated photo is ever shown. */
+const WEB = ls.get('okt-webphoto2', {});
+const saveWEB = () => ls.set('okt-webphoto2', WEB);
+const cleanName = n => (n || '').replace(/^.*｜/, '').replace(/(で|を|に)(集合|ランチ|探検|ドライブ|食べる|見る|買う|散歩|行く|挑戦).*$/, '').replace(/ ?(チェックイン|チェックアウト)$/, '').replace(/[「」『』]/g, '').trim();
+async function wikiPhoto(name){
+  const n = cleanName(name); if (n.length < 2) return null;
+  const base = 'https://ja.wikipedia.org/w/api.php?format=json&origin=*&action=query&prop=pageimages|info&inprop=url&piprop=thumbnail&pithumbsize=1280&redirects=1';
+  const pick = d => { const pg = Object.values(d.query?.pages || {})[0]; const u = pg?.thumbnail?.source; return u && /^https:\/\/upload\.wikimedia\.org\//.test(u) && !/\.svg/i.test(u) && !/(map|logo|地図|location|Flag)/i.test(u) ? {u, page:pg.fullurl, src:'Wikipedia'} : null; };
+  try {
+    let r = await fetch(base + '&titles=' + encodeURIComponent(n)); let hit = r.ok ? pick(await r.json()) : null;
+    if (hit) return hit;
+    r = await fetch(base + '&generator=search&gsrlimit=1&gsrsearch=' + encodeURIComponent(n + ' 沖縄'));
+    if (!r.ok) return null; const d = await r.json(); const pg = Object.values(d.query?.pages || {})[0];
+    if (!pg) return null; const t = (pg.title || '').replace(/\s*\(.*\)$/, '');
+    return t.length >= 2 && (n.includes(t) || t.includes(n)) ? pick(d) : null;
+  } catch { return null; }
+}
+async function webPhoto(name, url){
+  const key = (url || '') + '|' + cleanName(name);
+  if (key in WEB) return WEB[key];
+  let hit = null;
+  if (url && /^https:\/\//.test(url) && Sync.signedIn) { const u = await Sync.ogImage(url); if (u) hit = {u, page:url, src:'公式サイト'}; }
+  if (!hit) hit = await wikiPhoto(name);
+  WEB[key] = hit; saveWEB(); return hit;
+}
+const creditOf = u => !u ? '' : /upload\.wikimedia\.org/.test(u) ? 'Wikipedia' : /^https:/.test(u) ? 'リンク先' : '';
+// Shared items without a photo get one found once (by whichever device sees it first); everyone then sees the same photo.
+const triedWeb = new Set(ls.get('okt-photo-tried2', []));
+let fillingWeb = false;
+async function fillWebPhotos(){
+  if (fillingWeb || !Sync.signedIn) return; fillingWeb = true;
+  try {
+    const jobs = [];
+    for (const s of P.stops) if (s.spot !== false && !s.img && !autoImg(s.title) && !triedWeb.has(s.id)) jobs.push(['plan', s.id, s.title, s.url]);
+    for (const i of P.ideas) if (!i.img && !autoImg(i.name) && !triedWeb.has(i.id)) jobs.push(['spot', i.id, i.name, i.url]);
+    for (const w of wishes) if (!w.img && !autoImg(w.t) && !triedWeb.has(w.id)) jobs.push(['wish', w.id, w.t, '']);
+    for (const [kind, id, name, url] of jobs.slice(0, 8)) {
+      triedWeb.add(id); ls.set('okt-photo-tried2', [...triedWeb].slice(-500));
+      const hit = await webPhoto(name, url);
+      if (hit) Sync.save(kind, id, kind === 'wish' ? {text:name, img:hit.u} : {img:hit.u}, {photoOnly:true});
+    }
+  } finally { fillingWeb = false; }
+}
+// Daily cards that had no photo
+const cardWeb = c => { const k = 'card:' + c.n; if (k in WEB) return WEB[k];
+  if (!cardWeb.busy) { cardWeb.busy = true; (async () => { for (const x of cards.filter(x => !x.img && !(('card:' + x.n) in WEB))) { const link = (x.links || [])[0]; WEB['card:' + x.n] = await wikiPhoto(x.title) || (link ? await webPhoto(x.title, link[1]) : null); saveWEB(); } cardWeb.busy = false; lastMinute = ''; render(); })(); }
+  return undefined; };
+
 /* ---------- wiring ---------- */
 var booted = true;
 function rebuildAll(){
   rebuildP(); rebuildWishes(); rebuildArrivals();
   lastKey = ''; lastMinute = ''; render(); renderNotices(); renderReq();
   if (view === 'plan') renderPlan(); if (view === 'wish') renderWish(); if (view === 'spots') renderSpots();
+  setTimeout(fillWebPhotos, 1500);
 }
 Sync.on(why => {
   if (why === 'signed-out') { showGate('入室の期限が切れました。合言葉でもう一度入室してください。'); renderStatus(); return; }
