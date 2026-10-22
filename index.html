@@ -2520,7 +2520,13 @@ document.addEventListener('click', e => {
 var STANDALONE = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 var IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 var installEvt = null;
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
+  navigator.serviceWorker.register('sw.js', { updateViaCache:'none' }).then(r => r.update()).catch(() => {});
+  // when a newer version of the app arrives, show it right away (once)
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded && overlayFreeNow()) { reloaded = true; location.reload(); } });
+}
+function overlayFreeNow(){ return $('gate').hidden && $('edSheet').hidden && $('sheet').hidden && !$('wInput').value && !$('reqText').value; }
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderInstall(); });
 addEventListener('appinstalled', () => { installEvt = null; ls.set('okt-install-dismissed', true); renderInstall(); toastNote('ホーム画面に追加しました！'); });
 function installSteps(){
