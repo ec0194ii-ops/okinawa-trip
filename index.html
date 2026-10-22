@@ -853,6 +853,49 @@ nav button[data-badge]::before{content:attr(data-badge);position:absolute;top:0;
 .install-ban .x{border:0;background:none;color:#fff;opacity:.7;font-size:20px;width:28px;height:28px;padding:0}
 html.standalone body{overscroll-behavior-y:none}
 
+/* pull to refresh */
+.ptr{position:fixed;left:0;right:0;top:0;height:0;z-index:30;overflow:hidden;pointer-events:none;display:flex;align-items:flex-end;justify-content:center;transition:height .3s cubic-bezier(.22,1,.36,1);background:linear-gradient(#0f2a3a,#1d5a6b)}
+.ptr:not(.show){visibility:hidden}
+.ptr span{position:relative;z-index:1;margin-bottom:22px;color:#fff;font-size:12px;letter-spacing:.08em;font-weight:700;opacity:calc(var(--p,0) * 1.2)}
+.ptr-w{position:absolute;left:0;bottom:-1px;width:200%;height:36px;transform:translateX(calc(var(--p,0) * -12%))}
+.ptr-w .w1{fill:#2bb3b1;opacity:.85}.ptr-w .w2{fill:var(--bg)}
+.ptr.ready .ptr-w{transform:translateX(-16%)}
+.ptr.busy .ptr-w{animation:ptrw 1.1s linear infinite}
+@keyframes ptrw{from{transform:translateX(0)}to{transform:translateX(-25%)}}
+/* whale shark */
+.whale-o{position:fixed;inset:0;z-index:90;overflow:hidden;cursor:pointer;animation:wsIn .6s ease both}
+.whale-o.out{animation:wsOut .8s ease forwards}
+@keyframes wsIn{from{opacity:0}}@keyframes wsOut{to{opacity:0}}
+.ws-blue{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 40%,rgba(43,179,177,.28),rgba(9,44,66,.62));backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.ws-swim{position:absolute;top:30%;left:0;width:min(78vw,420px);animation:wsSwim 8s cubic-bezier(.45,.05,.55,.95) both}
+@keyframes wsSwim{from{transform:translateX(105vw)}to{transform:translateX(-110%)}}
+.ws-bob{animation:wsBob 2.6s ease-in-out infinite}
+@keyframes wsBob{50%{transform:translateY(14px) rotate(-1.5deg)}}
+.ws-bob svg{display:block;width:100%;height:auto;filter:drop-shadow(0 18px 24px rgba(0,20,40,.35))}
+.ws-tail{transform-origin:286px 64px;animation:wsTail .9s ease-in-out infinite}
+@keyframes wsTail{50%{transform:rotate(9deg)}}
+.ws-bub i{position:absolute;bottom:-20px;width:var(--s);height:var(--s);border-radius:50%;border:1.5px solid rgba(255,255,255,.7);animation:bub 4.5s var(--d) ease-in infinite}
+@keyframes bub{to{transform:translateY(-110vh) translateX(18px);opacity:0}}
+.ws-cap{position:absolute;left:0;right:0;bottom:22%;margin:0;text-align:center;color:#fff;font:700 clamp(24px,7vw,34px)/1.3 "Shippori Mincho B1",serif;letter-spacing:.06em;text-shadow:0 2px 18px rgba(0,30,50,.5);animation:fadeup .9s 1.4s ease both}
+/* landing */
+.land-o{position:fixed;inset:0;z-index:95;overflow:hidden;cursor:pointer;animation:wsIn .5s ease both}
+.land-o.out{animation:wsOut .6s ease forwards}
+.land-sky{position:absolute;inset:0;background:linear-gradient(#7fc8e8 0%,#bfe6f2 45%,#ffe9c4 64%)}
+.land-sea{position:absolute;left:0;right:0;bottom:0;height:36%;background:linear-gradient(#2bb3b1,#0f6f80)}
+.runway{position:absolute;left:-10%;right:-10%;top:18%;height:34px;background:#4a5560;transform:perspective(300px) rotateX(38deg);box-shadow:0 -2px 0 #f2e6c8}
+.runway i{position:absolute;left:0;right:0;top:50%;height:3px;margin-top:-1.5px;background:repeating-linear-gradient(90deg,#fff 0 26px,transparent 26px 52px);animation:rw .5s linear infinite}
+@keyframes rw{to{background-position:-52px 0}}
+.plane{position:absolute;left:0;top:0;width:min(46vw,240px);animation:fly 3s cubic-bezier(.3,.1,.3,1) both}
+.plane svg{display:block;width:100%;height:auto;filter:drop-shadow(0 10px 10px rgba(0,30,50,.25))}
+@keyframes fly{0%{transform:translate(105vw,6vh) rotate(-10deg)}62%{transform:translate(42vw,54vh) rotate(-7deg)}80%{transform:translate(26vw,calc(71vh - 64px)) rotate(0)}100%{transform:translate(4vw,calc(71vh - 64px)) rotate(0)}}
+.puff{position:absolute;left:44vw;top:calc(71vh - 12px);width:60px;height:22px;border-radius:50%;background:rgba(255,255,255,.85);opacity:0;animation:puff .9s 2.3s ease-out both}
+@keyframes puff{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(2.4) translateX(30px)}}
+.land-txt{position:absolute;left:0;right:0;top:16%;text-align:center;color:#0f2a3a;display:flex;flex-direction:column;gap:6px;animation:fadeup .8s 2.5s ease both}
+.land-txt small{font:600 11px/1 var(--f-body);letter-spacing:.34em;opacity:.7}
+.land-txt b{font:800 clamp(40px,12vw,64px)/1.1 "Shippori Mincho B1",serif;letter-spacing:.04em}
+.land-txt span{font-size:14px;font-weight:700}
+@media (prefers-reduced-motion: reduce){.ptr-w,.ws-bob,.ws-tail{animation:none!important}}
+
 nav button{border:0;background:transparent;font:inherit;font-size:11px;letter-spacing:.12em;color:var(--soft);padding:6px 4px;display:flex;flex-direction:column;align-items:center}
 nav button[aria-current="page"]{color:var(--ink);font-weight:700}
 nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;width:5px;height:5px;border-radius:50%;background:var(--hibiscus)}
@@ -1030,6 +1073,7 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
   </div>
 </div>
 <canvas id="burst" aria-hidden="true"></canvas>
+<div class="ptr" id="ptr" aria-live="polite"><svg class="ptr-w" viewBox="0 0 800 60" preserveAspectRatio="none" aria-hidden="true"><path class="w1" d="M0 30 Q50 10 100 30 T200 30 T300 30 T400 30 T500 30 T600 30 T700 30 T800 30 V60 H0Z"/><path class="w2" d="M0 36 Q50 20 100 36 T200 36 T300 36 T400 36 T500 36 T600 36 T700 36 T800 36 V60 H0Z"/></svg><span id="ptrTxt">引っぱって更新</span></div>
 <div class="install-ban" id="installBan" hidden><img src="icon-180.png" alt="" width="40" height="40"><p><b>ホーム画面に置けます</b><span>アイコンからアプリみたいに開けます</span></p><button type="button" class="mini-btn" data-install-how>やり方</button><button type="button" class="x" data-install-close aria-label="閉じる">×</button></div>
 
 <!-- FORECAST:START — updated automatically from the Japan Meteorological Agency. status: "pending" until the trip dates appear in the forecast. -->
@@ -2515,6 +2559,104 @@ document.addEventListener('click', e => {
 if (STANDALONE) document.documentElement.classList.add('standalone');
 { const _sh = show; show = function(){ _sh.apply(this, arguments); renderInstall(); }; }
 if (window.OKT_ENDPOINT) window.__oktRain = { setFc: v => { fc = v; renderForecast(); } };
+
+
+/* ---------- motion: pull to refresh with a wave, the whale shark, the landing ---------- */
+var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+var overlayFree = () => $('gate').hidden && $('coach').hidden && $('edSheet').hidden && $('sheet').hidden && !document.querySelector('.splash:not(.out)');
+
+/* pull to refresh */
+var ptr = null, ptrBusy = false;
+document.addEventListener('touchstart', e => {
+  if (ptrBusy || e.touches.length !== 1 || scrollY > 0 || !overlayFree() || e.target.closest('.irow,.strip,.tl-strip,.book,.thumbs,.lib,.ribbon,input,textarea,.cine')) { ptr = null; return; }
+  const t = e.touches[0]; ptr = {x:t.clientX, y:t.clientY, d:0, on:false};
+}, {passive:true});
+document.addEventListener('touchmove', e => {
+  if (!ptr) return; const t = e.touches[0], dx = t.clientX - ptr.x, dy = t.clientY - ptr.y;
+  if (!ptr.on) { if (dy > 8 && dy > Math.abs(dx) * 1.4 && scrollY <= 0) ptr.on = true; else if (Math.abs(dx) > 10 || dy < -6) { ptr = null; return; } else return; }
+  ptr.d = Math.max(0, Math.min(130, dy * .5));
+  const el = $('ptr'); el.classList.add('show'); el.classList.toggle('ready', ptr.d > 64);
+  el.style.setProperty('--p', (ptr.d / 64).toFixed(3)); el.style.height = ptr.d + 'px';
+  $('ptrTxt').textContent = ptr.d > 64 ? 'はなして更新' : '引っぱって更新';
+}, {passive:true});
+document.addEventListener('touchend', async () => {
+  if (!ptr) return; const p = ptr; ptr = null; const el = $('ptr'); if (!p.on) return;
+  if (p.d <= 64) { el.style.height = '0px'; el.classList.remove('show', 'ready'); return; }
+  ptrBusy = true; el.classList.add('busy'); el.style.height = '72px'; $('ptrTxt').textContent = '最新にしています…';
+  try { await Promise.all([Sync.refresh(), loadMedia(), loadForecast(), new Promise(r => setTimeout(r, 900))]); $('ptrTxt').textContent = Sync.online ? '最新になりました ✓' : 'つながりませんでした'; }
+  catch { $('ptrTxt').textContent = 'つながりませんでした'; }
+  setTimeout(() => { el.style.height = '0px'; el.classList.remove('busy', 'ready'); setTimeout(() => el.classList.remove('show'), 350); ptrBusy = false; }, 800);
+});
+
+/* the whale shark */
+var WHALE_SVG = `<svg viewBox="0 0 360 130" aria-hidden="true"><defs><linearGradient id="wsB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#244e68"/><stop offset=".62" stop-color="#3f7896"/><stop offset=".63" stop-color="#d7e9f0"/><stop offset="1" stop-color="#eef7fa"/></linearGradient></defs>
+  <g class="ws-tail"><path d="M282 58 L340 14 Q332 44 318 62 Q334 84 348 108 L282 70 Z" fill="#2b5a76"/></g>
+  <path d="M190 40 L214 6 Q220 26 226 46 Z" fill="#244e68"/>
+  <path d="M14 62 C22 42 70 30 140 33 C200 36 250 46 292 56 L292 70 C250 80 200 92 140 94 C78 96 30 86 14 70 Z" fill="url(#wsB)"/>
+  <path d="M108 84 L136 120 Q148 108 152 88 Z" fill="#2f6383"/>
+  <path d="M16 66 Q40 72 66 68" stroke="#183a50" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <circle cx="48" cy="56" r="2.6" fill="#0d2433"/>
+  <g stroke="#cfe6ee" stroke-width="1.6" opacity=".55" stroke-linecap="round"><path d="M92 38v26M112 36v28M132 35v29M152 35v29M172 36v28M192 38v26M212 41v24M232 45v19M252 49v13"/></g>
+  <g fill="#eaf6fa" opacity=".85"><circle cx="70" cy="44" r="2"/><circle cx="82" cy="52" r="1.8"/><circle cx="101" cy="45" r="2.1"/><circle cx="121" cy="50" r="2"/><circle cx="142" cy="43" r="2.2"/><circle cx="162" cy="51" r="1.9"/><circle cx="181" cy="45" r="2.1"/><circle cx="202" cy="52" r="1.8"/><circle cx="222" cy="50" r="2"/><circle cx="242" cy="55" r="1.7"/><circle cx="262" cy="57" r="1.6"/><circle cx="96" cy="58" r="1.6"/><circle cx="128" cy="59" r="1.7"/><circle cx="170" cy="60" r="1.6"/><circle cx="214" cy="62" r="1.5"/><circle cx="60" cy="50" r="1.5"/></g></svg>`;
+var lastWhale = 0;
+function swimWhale(caption){
+  if (Date.now() - lastWhale < 8000) return; lastWhale = Date.now();
+  if (REDUCED) { if (caption) toastNote(caption); return; }
+  const o = document.createElement('div'); o.className = 'whale-o';
+  const bubbles = Array.from({length:9}, (_, i) => `<i style="left:${8 + i * 10}%;--d:${(i % 4) * .5 + .8}s;--s:${6 + (i % 3) * 4}px"></i>`).join('');
+  o.innerHTML = `<div class="ws-blue"></div><div class="ws-bub">${bubbles}</div><div class="ws-swim"><div class="ws-bob">${WHALE_SVG}</div></div>${caption ? `<p class="ws-cap">${esc(caption)}</p>` : ''}`;
+  document.body.appendChild(o); o.addEventListener('click', () => o.remove());
+  setTimeout(() => o.classList.add('out'), 8200); setTimeout(() => o.remove(), 9000);
+}
+function whaleOfToday(){
+  const d = now(), p = jstParts(d), key = 'okt-whale-' + p.mo + '-' + p.day;
+  if (ls.get(key, false)) return null;
+  const left = Math.ceil((DAY0 - d) / 864e5), trip = Math.floor((d - DAY0) / 864e5);
+  let cap = null;
+  if ([30, 21, 14, 10, 7, 5, 3, 2, 1].includes(left)) cap = `沖縄まで、あと${left}日`;
+  else if (trip === 0) cap = 'いよいよ今日、沖縄へ！';
+  else if (trip === 2) cap = '今日はジンベエザメに会える日！';
+  if (cap) ls.set(key, true); return cap;
+}
+(function waitWhale(n){ if (!Sync.signedIn || !overlayFree() || view !== 'home') { if (n < 120) setTimeout(() => waitWhale(n + 1), 1000); return; }
+  const cap = whaleOfToday(); if (cap) setTimeout(() => swimWhale(cap), 900); })(0);
+// hidden: tap a 美ら海 / ジンベエ plan or wish
+document.addEventListener('click', e => {
+  const h = e.target.closest('#planTl .stop h3, #spList h3, .scard h3, .wish .t, .wish p');
+  if (h && /美ら海|ジンベエ|ジンベイ/.test(h.textContent)) swimWhale('');
+});
+
+/* the landing */
+var PLANE_SVG = `<svg viewBox="0 0 220 80" aria-hidden="true"><path d="M8 44 Q0 44 6 38 Q16 32 40 31 L176 30 L200 6 L214 6 L204 32 Q214 34 212 40 Q208 46 196 47 L40 49 Q16 49 8 44 Z" fill="#fff"/>
+  <path d="M84 40 L132 76 L148 76 L118 40 Z" fill="#e8eef2"/><path d="M96 33 L128 12 L140 12 L118 33 Z" fill="#dfe8ee"/>
+  <path d="M178 31 L188 22 L196 22 L192 31 Z" fill="#dfe8ee"/>
+  <g fill="#1d5a6b"><rect x="30" y="36" width="6" height="4" rx="1.5"/>${Array.from({length:14}, (_, i) => `<rect x="${46 + i * 9}" y="36" width="5" height="4" rx="1.5"/>`).join('')}</g>
+  <path d="M12 44 Q60 46 200 44" stroke="#2bb3b1" stroke-width="2.2" fill="none"/></svg>`;
+function playLanding(fam, tries = 0){
+  // wait for the splash / sign-in / sheets to close first
+  if (!REDUCED && !overlayFree() && tries < 40) { setTimeout(() => playLanding(fam, tries + 1), 500); return; }
+  if (REDUCED || !overlayFree()) { toastNote(`${fam}が沖縄に着きました！めんそーれ！`); burst(); return; }
+  const o = document.createElement('div'); o.className = 'land-o';
+  o.innerHTML = `<div class="land-sky"></div><div class="land-sea"><div class="runway"><i></i></div></div><div class="plane">${PLANE_SVG}</div><div class="puff"></div>
+    <div class="land-txt"><small>WELCOME TO OKINAWA</small><b>めんそーれ！</b><span>${esc(fam)}が沖縄に着きました</span></div>`;
+  document.body.appendChild(o);
+  const close = () => { o.classList.add('out'); setTimeout(() => o.remove(), 600); };
+  o.addEventListener('click', close);
+  setTimeout(() => { burst(); setTimeout(burst, 300); }, 2700);
+  setTimeout(close, 6200);
+}
+var landingSeen = ls.get('okt-landing-seen', null), ownPress = 0;
+// "着いた！" pressed on this phone: remember it before the app saves, so the landing plays right away (once).
+$('flights').addEventListener('click', e => { const b = e.target.closest('button.arrive'); if (b && !b.disabled && b.dataset.fam === me && !arrived[me]) ownPress = Date.now(); }, true);
+{ const _ra = rebuildArrivals; rebuildArrivals = function(){ _ra.apply(this, arguments);
+  const first = landingSeen === null; if (first) landingSeen = {};
+  for (const f of FAMS) { const at = arrived[f]; if (!at || landingSeen[f] === at) continue;
+    landingSeen[f] = at;
+    const mine = f === me && Date.now() - ownPress < 60000;
+    if (mine) { ownPress = 0; setTimeout(() => playLanding(f), 200); }
+    else if (!first && Date.now() - at < 30 * 60000) setTimeout(() => playLanding(f), 300); }
+  ls.set('okt-landing-seen', landingSeen); }; }
+if (window.OKT_ENDPOINT) window.__oktMotion = { swimWhale, playLanding };
 
 /* ---------- wiring ---------- */
 var booted = true;
