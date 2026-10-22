@@ -877,23 +877,6 @@ html.standalone body{overscroll-behavior-y:none}
 .ws-bub i{position:absolute;bottom:-20px;width:var(--s);height:var(--s);border-radius:50%;border:1.5px solid rgba(255,255,255,.7);animation:bub 4.5s var(--d) ease-in infinite}
 @keyframes bub{to{transform:translateY(-110vh) translateX(18px);opacity:0}}
 .ws-cap{position:absolute;left:0;right:0;bottom:22%;margin:0;text-align:center;color:#fff;font:700 clamp(24px,7vw,34px)/1.3 "Shippori Mincho B1",serif;letter-spacing:.06em;text-shadow:0 2px 18px rgba(0,30,50,.5);animation:fadeup .9s 1.4s ease both}
-/* landing */
-.land-o{position:fixed;inset:0;z-index:95;overflow:hidden;cursor:pointer;animation:wsIn .5s ease both}
-.land-o.out{animation:wsOut .6s ease forwards}
-.land-sky{position:absolute;inset:0;background:linear-gradient(#7fc8e8 0%,#bfe6f2 45%,#ffe9c4 64%)}
-.land-sea{position:absolute;left:0;right:0;bottom:0;height:36%;background:linear-gradient(#2bb3b1,#0f6f80)}
-.runway{position:absolute;left:-10%;right:-10%;top:18%;height:34px;background:#4a5560;transform:perspective(300px) rotateX(38deg);box-shadow:0 -2px 0 #f2e6c8}
-.runway i{position:absolute;left:0;right:0;top:50%;height:3px;margin-top:-1.5px;background:repeating-linear-gradient(90deg,#fff 0 26px,transparent 26px 52px);animation:rw .5s linear infinite}
-@keyframes rw{to{background-position:-52px 0}}
-.plane{position:absolute;left:0;top:0;width:min(46vw,240px);animation:fly 3s cubic-bezier(.3,.1,.3,1) both}
-.plane svg{display:block;width:100%;height:auto;filter:drop-shadow(0 10px 10px rgba(0,30,50,.25))}
-@keyframes fly{0%{transform:translate(105vw,6vh) rotate(-10deg)}62%{transform:translate(42vw,54vh) rotate(-7deg)}80%{transform:translate(26vw,calc(71vh - 64px)) rotate(0)}100%{transform:translate(4vw,calc(71vh - 64px)) rotate(0)}}
-.puff{position:absolute;left:44vw;top:calc(71vh - 12px);width:60px;height:22px;border-radius:50%;background:rgba(255,255,255,.85);opacity:0;animation:puff .9s 2.3s ease-out both}
-@keyframes puff{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(2.4) translateX(30px)}}
-.land-txt{position:absolute;left:0;right:0;top:16%;text-align:center;color:#0f2a3a;display:flex;flex-direction:column;gap:6px;animation:fadeup .8s 2.5s ease both}
-.land-txt small{font:600 11px/1 var(--f-body);letter-spacing:.34em;opacity:.7}
-.land-txt b{font:800 clamp(40px,12vw,64px)/1.1 "Shippori Mincho B1",serif;letter-spacing:.04em}
-.land-txt span{font-size:14px;font-weight:700}
 @media (prefers-reduced-motion: reduce){.ptr-w,.ws-bob,.ws-tail{animation:none!important}}
 
 nav button{border:0;background:transparent;font:inherit;font-size:11px;letter-spacing:.12em;color:var(--soft);padding:6px 4px;display:flex;flex-direction:column;align-items:center}
@@ -2561,7 +2544,7 @@ if (STANDALONE) document.documentElement.classList.add('standalone');
 if (window.OKT_ENDPOINT) window.__oktRain = { setFc: v => { fc = v; renderForecast(); } };
 
 
-/* ---------- motion: pull to refresh with a wave, the whale shark, the landing ---------- */
+/* ---------- motion: pull to refresh with a wave, the whale shark ---------- */
 var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 var overlayFree = () => $('gate').hidden && $('coach').hidden && $('edSheet').hidden && $('sheet').hidden && !document.querySelector('.splash:not(.out)');
 
@@ -2626,37 +2609,7 @@ document.addEventListener('click', e => {
   if (h && /美ら海|ジンベエ|ジンベイ/.test(h.textContent)) swimWhale('');
 });
 
-/* the landing */
-var PLANE_SVG = `<svg viewBox="0 0 220 80" aria-hidden="true"><path d="M8 44 Q0 44 6 38 Q16 32 40 31 L176 30 L200 6 L214 6 L204 32 Q214 34 212 40 Q208 46 196 47 L40 49 Q16 49 8 44 Z" fill="#fff"/>
-  <path d="M84 40 L132 76 L148 76 L118 40 Z" fill="#e8eef2"/><path d="M96 33 L128 12 L140 12 L118 33 Z" fill="#dfe8ee"/>
-  <path d="M178 31 L188 22 L196 22 L192 31 Z" fill="#dfe8ee"/>
-  <g fill="#1d5a6b"><rect x="30" y="36" width="6" height="4" rx="1.5"/>${Array.from({length:14}, (_, i) => `<rect x="${46 + i * 9}" y="36" width="5" height="4" rx="1.5"/>`).join('')}</g>
-  <path d="M12 44 Q60 46 200 44" stroke="#2bb3b1" stroke-width="2.2" fill="none"/></svg>`;
-function playLanding(fam, tries = 0){
-  // wait for the splash / sign-in / sheets to close first
-  if (!REDUCED && !overlayFree() && tries < 40) { setTimeout(() => playLanding(fam, tries + 1), 500); return; }
-  if (REDUCED || !overlayFree()) { toastNote(`${fam}が沖縄に着きました！めんそーれ！`); burst(); return; }
-  const o = document.createElement('div'); o.className = 'land-o';
-  o.innerHTML = `<div class="land-sky"></div><div class="land-sea"><div class="runway"><i></i></div></div><div class="plane">${PLANE_SVG}</div><div class="puff"></div>
-    <div class="land-txt"><small>WELCOME TO OKINAWA</small><b>めんそーれ！</b><span>${esc(fam)}が沖縄に着きました</span></div>`;
-  document.body.appendChild(o);
-  const close = () => { o.classList.add('out'); setTimeout(() => o.remove(), 600); };
-  o.addEventListener('click', close);
-  setTimeout(() => { burst(); setTimeout(burst, 300); }, 2700);
-  setTimeout(close, 6200);
-}
-var landingSeen = ls.get('okt-landing-seen', null), ownPress = 0;
-// "着いた！" pressed on this phone: remember it before the app saves, so the landing plays right away (once).
-$('flights').addEventListener('click', e => { const b = e.target.closest('button.arrive'); if (b && !b.disabled && b.dataset.fam === me && !arrived[me]) ownPress = Date.now(); }, true);
-{ const _ra = rebuildArrivals; rebuildArrivals = function(){ _ra.apply(this, arguments);
-  const first = landingSeen === null; if (first) landingSeen = {};
-  for (const f of FAMS) { const at = arrived[f]; if (!at || landingSeen[f] === at) continue;
-    landingSeen[f] = at;
-    const mine = f === me && Date.now() - ownPress < 60000;
-    if (mine) { ownPress = 0; setTimeout(() => playLanding(f), 200); }
-    else if (!first && Date.now() - at < 30 * 60000) setTimeout(() => playLanding(f), 300); }
-  ls.set('okt-landing-seen', landingSeen); }; }
-if (window.OKT_ENDPOINT) window.__oktMotion = { swimWhale, playLanding };
+if (window.OKT_ENDPOINT) window.__oktMotion = { swimWhale };
 
 /* ---------- wiring ---------- */
 var booted = true;
