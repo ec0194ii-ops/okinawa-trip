@@ -890,6 +890,13 @@ html.standalone body{overscroll-behavior-y:none}
 .navi:active{transform:scale(.97)}
 .lk .nav-a{color:#2f7cf6}
 
+/* travel time between stops */
+.drive .aim{font-size:10px;margin-left:6px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--soft)}
+.drive.wait .ln{font-size:11.5px;opacity:.85}
+.dot-w{width:7px;height:7px;border-radius:50%;background:var(--line);flex:none;margin:0 4px 0 4px}
+.dot-w.busy{background:var(--sea);animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+
 nav button{border:0;background:transparent;font:inherit;font-size:11px;letter-spacing:.12em;color:var(--soft);padding:6px 4px;display:flex;flex-direction:column;align-items:center}
 nav button[aria-current="page"]{color:var(--ink);font-weight:700}
 nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;width:5px;height:5px;border-radius:50%;background:var(--hibiscus)}
@@ -1599,7 +1606,7 @@ function renderPlan(){
   $('planTl').innerHTML = (insertMode ? `<div class="ins-ban"><b>どこに入れる？</b><span>入れたいところの「＋ ここに入れる」をタップ。ほかの日にするなら上の日付を押してね。</span><button type="button" class="mini-btn" id="insCancel">やめる</button></div>` : '') + stops.map((s, k) => {
     const ideas = P.ideas.filter(i => i.stop === s.id).sort((a,b) => (b.picked - a.picked) || (likeCount(b) - likeCount(a)));
     const a = atOf(s), cls = s === next && tripIdx >= 0 && tripIdx <= 3 ? 'now' : a && a <= d ? 'past' : '';
-    const drive = s.go ? `<div class="drive"><div class="ln">${s.walk ? walkIcon : carIcon}${esc(s.go)}</div></div>` : '';
+    const drive = driveLine(s);
     return slot(k) + drive + `<div class="stop ${cls}"><time>${s.t || '未定'}</time><div class="scard">${imgFor(s) ? `<img src="${imgFor(s)}" alt="" loading="lazy">` : ''}<div class="in">
       <div class="meta"><span class="pill ${statusPill(s.status)}">${s.status}</span>${s.by ? famChip(s.by) : ''}</div>
       <h3>${esc(s.title)}</h3>${s.note ? `<p>${esc(s.note)}</p>` : ''}${kidsOn ? kidTipHTML(s) : ''}
@@ -2651,13 +2658,117 @@ function navUrl(q){ return 'https://www.google.com/maps/dir/?api=1&travelmode=dr
 }; }
 if (window.OKT_ENDPOINT) window.__oktNav = { hero: d => renderHero(d), navDest, navUrl, stops: () => P.stops };
 
+
+/* ---------- travel time between places (car, or walking when close) ----------
+   Places are looked up on OpenStreetMap, driving time comes from the OSRM route service.
+   The result is saved on the plan (quietly), so everyone sees the same line. A time typed by hand is never overwritten. */
+var AUTO_MARK = '（目安）';
+var GEO = ls.get('okt-geo', {}), ROUTE = ls.get('okt-route', {});
+var geoQ = Promise.resolve();
+// street addresses of the trip's main places (looked up with the official GSI address search first)
+var ADDR = [
+  [/ウミカジ|PIZZERIA CARINO|SEE THE SEA|きじむなぁ/, '沖縄県豊見城市瀬長174-6'],
+  [/ビオスの丘/, '沖縄県うるま市石川嘉手苅961-30'],
+  [/ハレクラニ/, '沖縄県国頭郡恩納村名嘉真1967-1'],
+  [/美ら海水族館/, '沖縄県国頭郡本部町石川424'],
+  [/うおたむ/, '沖縄県国頭郡恩納村瀬良垣1678-1'],
+  [/かふぅ|かふう/, '沖縄県国頭郡恩納村瀬良垣1105-1'],
+  [/SUNSETTA|サンセッタ/, '沖縄県国頭郡恩納村瀬良垣1416-1'],
+  [/かりゆし水族館/, '沖縄県豊見城市豊崎3-35'],
+  [/琉球ガラス村/, '沖縄県糸満市福地169'],
+  [/ナゴパイナップルパーク/, '沖縄県名護市為又1195']
+];
+async function gsi(q){
+  try { const r = await fetch('https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + encodeURIComponent(q));
+    if (!r.ok) return undefined; const d = await r.json(); const c = d?.[0]?.geometry?.coordinates; return c ? [+c[1], +c[0]] : null; } catch { return undefined; }
+}
+const sleepMs = ms => new Promise(r => setTimeout(r, ms));
+function geocode(q){
+  q = (q || '').trim(); if (!q) return Promise.resolve(null);
+  if (q in GEO) return Promise.resolve(GEO[q]);
+  // the public geocoder allows about one request per second
+  geoQ = geoQ.then(async () => {
+    if (q in GEO) return;
+    const tries = [q, q.replace(/[（(].*?[)）]/g, '').replace(/\s*(本店|.{1,6}店)$/, '').trim(), q.split(/[\s　]/)[0]].filter((x, i, a) => x && x.length >= 2 && a.indexOf(x) === i);
+    let hit = null, answered = false;
+    const addr = (ADDR.find(([rx]) => rx.test(q)) || [])[1];
+    if (addr) { const g = await gsi(addr); if (g) { GEO[q] = g; ls.set('okt-geo', GEO); return; } }
+    for (const t of tries) {
+      try {
+        const r = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=jp&accept-language=ja&viewbox=127.55,26.95,128.45,25.95&bounded=1&q=' + encodeURIComponent(t), {referrerPolicy:'origin'});
+        if (r.ok) { answered = true; const d = await r.json(); if (d[0]) hit = [+d[0].lat, +d[0].lon]; }
+      } catch {}
+      await sleepMs(1100); if (hit) break;
+    }
+    if (hit || answered) { GEO[q] = hit; ls.set('okt-geo', GEO); }   // a network failure is retried later
+  });
+  return geoQ.then(() => GEO[q] || null);
+}
+const haversine = (a, b) => { const R = 6371000, r = x => x * Math.PI / 180, dl = r(b[0] - a[0]), dn = r(b[1] - a[1]);
+  const h = Math.sin(dl / 2) ** 2 + Math.cos(r(a[0])) * Math.cos(r(b[0])) * Math.sin(dn / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+async function legBetween(fromQ, toQ){
+  const key = fromQ + '→' + toQ; if (key in ROUTE) return ROUTE[key];
+  const [a, b] = [await geocode(fromQ), await geocode(toQ)]; let out = null, answered = false;
+  if (a && b) {
+    const straight = haversine(a, b);
+    if (straight < 150) { answered = true; out = {mode:'walk', text:'同じ場所・歩いてすぐ'}; }
+    else if (straight < 1100) { answered = true; const min = Math.max(1, Math.round(straight * 1.3 / 75)); out = {mode:'walk', text:`歩いて約${min}分`}; }
+    else {
+      try {
+        const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=false`);
+        const d = r.ok ? await r.json() : null, rt = d?.routes?.[0]; if (d) answered = true;
+        if (rt) { const min = Math.max(5, Math.round(rt.duration * 1.25 / 60 / 5) * 5), km = Math.round(rt.distance / 1000);
+          out = {mode:'car', text:`車 約${min >= 60 ? `${Math.floor(min / 60)}時間${min % 60 ? `${min % 60}分` : ''}` : `${min}分`} ／ 約${km}km`}; }
+      } catch {}
+    }
+  }
+  const known = (fromQ in GEO) && (toQ in GEO);
+  if (answered || (known && (!a || !b))) { ROUTE[key] = out; ls.set('okt-route', ROUTE); }
+  return out;
+}
+// where a stop starts from: the stop before it that day, or the hotel for the first stop of a day spent there
+function legFrom(s){
+  const day = P.stops.filter(x => x.d === s.d && x.spot !== false).sort(byTime), i = day.indexOf(s);
+  if (i > 0) return day[i - 1];
+  if (i === 0 && s.d >= 2) return P.stops.filter(x => x.d < s.d && x.spot !== false && /ハレクラニ|ホテル|チェックイン/.test(x.title)).sort((a, b) => b.d - a.d)[0] || null;
+  return null;
+}
+const isAuto = g => !g || g.endsWith(AUTO_MARK) || /^場所が決まったら|^同じ施設内|^本部(エリア内|周辺)の移動$/.test(g);
+function driveLine(s){
+  if (s.spot === false) return s.go ? `<div class="drive"><div class="ln">${carIcon}${esc(s.go)}</div></div>` : '';
+  const from = legFrom(s);
+  if (s.go && !isAuto(s.go)) return `<div class="drive"><div class="ln">${s.walk ? walkIcon : carIcon}${esc(s.go)}</div></div>`;   // typed by hand
+  if (!from) return '';
+  const fromHotel = from.d !== s.d;
+  if (!navDest(from) || !navDest(s)) return `<div class="drive wait"><div class="ln"><span class="dot-w"></span>移動時間は、${!navDest(s) ? 'この予定' : '前の予定'}の場所が決まったら表示</div></div>`;
+  if (s.go) return `<div class="drive"><div class="ln">${s.walk ? walkIcon : carIcon}${fromHotel ? 'ホテルから ' : ''}${esc(s.go.replace(AUTO_MARK, ''))}<small class="aim">目安</small></div></div>`;
+  const key = navDest(from) + '→' + navDest(s); if (key in ROUTE) return '';   // looked up, but no route found
+  return `<div class="drive wait"><div class="ln"><span class="dot-w busy"></span>移動時間を調べています…</div></div>`;
+}
+// fill in / refresh the saved times (one device does it, everyone sees it)
+var travelBusy = false;
+async function fillTravel(){
+  if (travelBusy || !Sync.signedIn) return; travelBusy = true;
+  try {
+    for (const s of [...P.stops].sort((a, b) => a.d - b.d || byTime(a, b))) {
+      if (s.spot === false || (s.go && !isAuto(s.go))) continue;
+      const from = legFrom(s), fq = from && navDest(from), tq = navDest(s);
+      if (!fq || !tq) { if (s.go && s.go.endsWith(AUTO_MARK)) Sync.save('plan', s.id, {travelNote:'', travelMode:'auto'}, {photoOnly:true}); continue; }
+      const leg = await legBetween(fq, tq); if (!leg) continue;
+      const note = leg.text + AUTO_MARK, mode = leg.mode === 'walk' ? 'walk' : 'car';
+      const cur = Sync.get(s.id)?.payload || {};
+      if (cur.travelNote !== note || cur.travelMode !== mode) Sync.save('plan', s.id, {travelNote:note, travelMode:mode}, {photoOnly:true});
+    }
+  } finally { travelBusy = false; }
+}
+
 /* ---------- wiring ---------- */
 var booted = true;
 function rebuildAll(){
   rebuildP(); rebuildWishes(); rebuildArrivals();
   lastKey = ''; lastMinute = ''; render(); renderNotices(); renderReq();
   if (view === 'plan') renderPlan(); if (view === 'wish') renderWish(); if (view === 'spots') renderSpots();
-  setTimeout(fillWebPhotos, 1500); renderInstall();
+  setTimeout(fillWebPhotos, 1500); setTimeout(fillTravel, 2500); renderInstall();
 }
 Sync.on(why => {
   if (why === 'signed-out') { showGate('入室の期限が切れました。合言葉でもう一度入室してください。'); renderStatus(); return; }
