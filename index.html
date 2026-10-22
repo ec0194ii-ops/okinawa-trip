@@ -2460,7 +2460,8 @@ function renderRain(){
   const d = planDay, list = RAIN_SPOTS.filter(r => r.days.includes(d));
   const wet = rainOf(d), open = wet || rainOpen[d];
   box.className = 'rain' + (wet ? ' wet' : '') + (open ? ' open' : '');
-  if (!list.length && !wet) { box.innerHTML = ''; box.hidden = true; return; }
+  // Only shown when the forecast says rain for that day.
+  if (!wet || (!list.length && planDay !== 2)) { box.innerHTML = ''; box.hidden = true; return; }
   box.hidden = false;
   const head = wet ? `<div class="rain-h"><span class="rain-ic">☔</span><div><b>${TRIP_DATES[d]}は雨の予報${wet.pop !== '' && wet.pop != null ? `（降水${esc(wet.pop)}%）` : ''}</b><small>屋内で子どもも楽しめる場所を、候補に入れておけます。</small></div></div>`
     : `<button type="button" class="rain-h rain-tg" data-rain-toggle aria-expanded="${!!open}"><span class="rain-ic">☂</span><div><b>雨だったら？</b><small>${open ? '屋内で子どもも楽しめる場所' : 'タップで、屋内で楽しめる場所を表示'}</small></div><i aria-hidden="true">${open ? '−' : '＋'}</i></button>`;
