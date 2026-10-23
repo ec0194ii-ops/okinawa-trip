@@ -907,6 +907,9 @@ html.standalone body{overscroll-behavior-y:none}
 .push-box{flex-direction:row;align-items:flex-start;gap:12px}.push-box>div{flex:1;display:flex;flex-direction:column;gap:10px}
 .push-ic{font-size:22px;line-height:1}
 
+.sp-del{margin-left:auto;border:1px solid var(--line);background:transparent;color:var(--soft);border-radius:999px;padding:3px 10px;font:inherit;font-size:11.5px}
+.sp-del.armed{background:#c8553d;border-color:#c8553d;color:#fff;font-weight:700}
+.spot .lk{display:flex;align-items:center;gap:12px}
 nav button{border:0;background:transparent;font:inherit;font-size:11px;letter-spacing:.12em;color:var(--soft);padding:6px 4px;display:flex;flex-direction:column;align-items:center}
 nav button[aria-current="page"]{color:var(--ink);font-weight:700}
 nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;width:5px;height:5px;border-radius:50%;background:var(--hibiscus)}
@@ -1862,12 +1865,17 @@ function renderSpots(){
     return `<article class="spot"><div class="pic">${picHTML(isIdea ? x : {...x, name:x.title})}<span class="when">${tag}</span>${x.ref ? `<span class="ref">${x.ref === true ? '料理の参考' : esc(x.ref)}</span>` : ''}</div>
     <div class="in"><h3>${esc(title)}</h3>${x.note ? `<p>${esc(x.note)}</p>` : ''}
       ${isIdea ? `<div class="by">${famChip(x.by)}${likeCount(x) ? `<span class="likes">♥ ${likeCount(x)}</span>` : ''}${x.picked ? '<span class="pill chosen">決まり</span>' : ''}</div>` : ''}
-      <div class="lk">${safeUrl(x.url) ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">HP ↗</a>` : ''}<a href="${mapUrl(x.map || title.replace(/ チェックイン|で集合|でランチ.*$/,''))}" target="_blank" rel="noopener">地図 ↗</a></div></div></article>`; };
+      <div class="lk">${safeUrl(x.url) ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">HP ↗</a>` : ''}<a href="${mapUrl(x.map || title.replace(/ チェックイン|で集合|でランチ.*$/,''))}" target="_blank" rel="noopener">地図 ↗</a>${isIdea || x.status === '候補' ? `<button type="button" class="sp-del" data-del="${isIdea ? 'spot' : 'plan'}" data-id="${esc(x.id)}" data-name="${esc(title)}">削除</button>` : ''}</div></div></article>`; };
   const fixedHTML = `<section class="sblock"><div class="sblock-h"><h2>決まっている場所</h2><span>${fixed.length}か所</span></div><div class="sgrid">${fixed.map(s => card(s,false)).join('') || '<p class="note">まだありません</p>'}</div></section>`;
   const byDay = [1,2,0,3].map(dd => { const xs = [...candStops.filter(s => s.d === dd).map(s => card(s,false)), ...cands.filter(i => i.d === dd).sort((a,b) => likeCount(b)-likeCount(a)).map(i => card(i,true))]; return xs.length ? `<div class="area-h">11/${20+dd}</div><div class="sgrid">${xs.join('')}</div>` : ''; }).join('');
   const candHTML = `<section class="sblock cand"><div class="sblock-h"><h2>候補スポット</h2><span>${nCand}件・いいね順</span></div>${byDay || '<p class="note">まだありません。PLANの「場所候補」から追加できます。</p>'}</section>`;
   $('sList').innerHTML = sFilter === 'fixed' ? fixedHTML : sFilter === 'cand' ? candHTML : fixedHTML + candHTML;
 }
+$('sList').addEventListener('click', e => {
+  const b = e.target.closest('.sp-del'); if (!b) return;
+  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = b.dataset.del === 'plan' ? 'PLANの予定ごと削除？' : 'もう一度押すと削除'; clearTimeout(b._t); b._t = setTimeout(() => { b.classList.remove('armed'); b.textContent = '削除'; }, 3000); return; }
+  Sync.remove(b.dataset.del, b.dataset.id); toastNote(`「${b.dataset.name}」を削除しました`);
+});
 $('sFilter').addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if (!b) return; sFilter = b.dataset.k; renderSpots(); });
 
 /* ---------- MEMORY ---------- */
@@ -2061,7 +2069,7 @@ const KID_TIPS = [
   [/ブルーシール|アイス/, ['紫色の紅イモ味、どんな味かな？']],
   [/パイナップル/, ['パイナップル号に乗って、園内をぐるっとまわれるよ。']],
   [/プール/, ['水遊びでたっぷり遊ぼう。']],
-  [/今帰仁|城跡|首里城|グスク/, ['大きな石垣のお城を探検！上からは海が見えるよ。']],
+  [/今帰仁城|城跡|首里城|.+グスク|グスク跡/, ['大きな石垣のお城を探検！上からは海が見えるよ。']],
   [/ブセナ|海中展望塔|グラス.?ボート/, ['海の中の展望塔から、泳ぐ魚が目の前に見えるよ。','船の底がガラスのボートで、足元を魚が泳ぐよ。']],
   [/おきなわワールド|玉泉洞|鍾乳洞/, ['ひんやりした鍾乳洞は、まるで秘密の地下トンネル。']],
   [/琉球村|エイサー/, ['太鼓をたたいて踊るエイサーに、思わず体が動くよ。']],
@@ -2079,7 +2087,8 @@ let kidsOn = ls.get('okt-kids2', true);
 const kidTipsFor = s => {
   const pk = s.id && typeof P !== 'undefined' ? P.ideas.find(i => i.stop === s.id && i.picked) : null;
   const out = [];
-  [pk ? pk.name : '', s.title || s.name || '', s.note || ''].forEach(txt => { if (txt) KID_TIPS.forEach(([rx, ts]) => { if (rx.test(txt)) ts.forEach(t => out.includes(t) || out.push(t)); }); });
+  const eat = x => x && /tabelog|gnavi|hotpepper|retty|ikyu/.test(x.url || '');
+  [pk ? (eat(pk) ? 'ディナー' : pk.name) : '', eat(s) ? 'ディナー' : (s.title || s.name || ''), eat(s) ? '' : (s.note || '')].forEach(txt => { if (txt) KID_TIPS.forEach(([rx, ts]) => { if (rx.test(txt)) ts.forEach(t => out.includes(t) || out.push(t)); }); });
   if (!out.length && s.spot !== false && s.title && !/SKY|チェックアウト|集合/.test(s.title)) out.push(KID_FALLBACK);
   return out.slice(0, 3);
 };
@@ -2659,13 +2668,17 @@ if (window.OKT_ENDPOINT) window.__oktMotion = { swimWhale };
 
 
 /* ---------- one-tap navigation to the next stop (Google Maps directions) ---------- */
+var PLACE_URL = {};
 function navDest(s){
   if (!s || /SKY\d|フライト|チェックアウト/.test(s.title || '')) return '';
   const pk = P.ideas.find(i => i.stop === s.id && i.picked);
-  if (pk) return pk.mapQuery || pk.map || pk.name;
+  if (pk) { const q = pk.mapQuery || pk.map || pk.name; if (pk.url) PLACE_URL[q] = pk.url; return q; }
+  const hasCands = P.ideas.some(i => i.stop === s.id);
   const t = (s.title || '').replace(/^.*｜/, '').replace(/ ?チェックイン$/, '').replace(/(で集合|でランチ|でディナー).*$/, '').trim();
   // generic titles ("沖縄料理のディナー", "本部周辺でランチ") have no single place until a candidate is chosen
-  if (!t || /ランチ|ディナー|夜ごはん|朝ごはん|休憩|移動|近く|周辺/.test(t)) return '';
+  if (!t || /ランチ|ディナー|ごはん|ご飯|料理|食事|休憩|移動|近く|周辺/.test(t)) return '';
+  if (hasCands && !/で(集合|ランチ|ディナー|ごはん)/.test(s.title || '')) return '';   // still choosing among candidates
+  if (s.url) PLACE_URL[s.mapQuery || t] = s.url;
   return s.mapQuery || t;
 }
 function navUrl(q){ return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + encodeURIComponent(/沖縄/.test(q) ? q : q + ' 沖縄'); }
@@ -2688,7 +2701,7 @@ if (window.OKT_ENDPOINT) window.__oktNav = { hero: d => renderHero(d), navDest, 
    Places are looked up on OpenStreetMap, driving time comes from the OSRM route service.
    The result is saved on the plan (quietly), so everyone sees the same line. A time typed by hand is never overwritten. */
 var AUTO_MARK = '（目安）';
-var GEO = ls.get('okt-geo', {}), ROUTE = ls.get('okt-route', {});
+var GEO = ls.get('okt-geo2', {}), ROUTE = ls.get('okt-route2', {});
 var geoQ = Promise.resolve();
 // street addresses of the trip's main places (looked up with the official GSI address search first)
 var ADDR = [
@@ -2716,8 +2729,15 @@ function geocode(q){
     if (q in GEO) return;
     const tries = [q, q.replace(/[（(].*?[)）]/g, '').replace(/\s*(本店|.{1,6}店)$/, '').trim(), q.split(/[\s　]/)[0]].filter((x, i, a) => x && x.length >= 2 && a.indexOf(x) === i);
     let hit = null, answered = false;
-    const addr = (ADDR.find(([rx]) => rx.test(q)) || [])[1];
-    if (addr) { const g = await gsi(addr); if (g) { GEO[q] = g; ls.set('okt-geo', GEO); return; } }
+    let addr = (ADDR.find(([rx]) => rx.test(q)) || [])[1];
+    const page = PLACE_URL[q];
+    if (!addr && page && /tabelog|gnavi|hotpepper|retty|ikyu|jalan/.test(page) && Sync.signedIn) {
+      const info = await Sync.placeInfo(page);
+      if (info && info.lat && info.lng) { GEO[q] = [info.lat, info.lng]; ls.set('okt-geo2', GEO); return; }
+      if (info && info.address) addr = info.address;
+    }
+    if (addr) { const g = await gsi(addr); if (g) { GEO[q] = g; ls.set('okt-geo2', GEO); return; } }
+    if (page && /tabelog|gnavi|hotpepper|retty/.test(page) && Sync.signedIn) { GEO[q] = null; ls.set('okt-geo2', GEO); return; }   // a shop: never guess its place from its name alone
     for (const t of tries) {
       try {
         const r = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=jp&accept-language=ja&viewbox=127.55,26.95,128.45,25.95&bounded=1&q=' + encodeURIComponent(t), {referrerPolicy:'origin'});
@@ -2725,7 +2745,7 @@ function geocode(q){
       } catch {}
       await sleepMs(1100); if (hit) break;
     }
-    if (hit || answered) { GEO[q] = hit; ls.set('okt-geo', GEO); }   // a network failure is retried later
+    if (hit || answered) { GEO[q] = hit; ls.set('okt-geo2', GEO); }   // a network failure is retried later
   });
   return geoQ.then(() => GEO[q] || null);
 }
@@ -2748,7 +2768,7 @@ async function legBetween(fromQ, toQ){
     }
   }
   const known = (fromQ in GEO) && (toQ in GEO);
-  if (answered || (known && (!a || !b))) { ROUTE[key] = out; ls.set('okt-route', ROUTE); }
+  if (answered || (known && (!a || !b))) { ROUTE[key] = out; ls.set('okt-route2', ROUTE); }
   return out;
 }
 // where a stop starts from: the stop before it that day, or the hotel for the first stop of a day spent there

@@ -162,6 +162,7 @@
     async logout(){ try { await api({ action:'logout' }); } catch {} auth = null; localStorage.removeItem(K.session); emit('signed-out'); },
     refresh:() => pull(true), drain,
     call:(body) => api(body),
+    placeInfo:(url) => api({ action:'og_image', url, place:true }).catch(() => null),
     ogImage:(url) => api({ action:'og_image', url }).then(d => d.image || '').catch(() => ''),
     media:{
       list:() => api({ action:'media_list' }),
