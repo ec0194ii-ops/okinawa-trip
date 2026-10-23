@@ -116,6 +116,20 @@
     x.onerror = () => reject(Error('network_error')); x.ontimeout = () => reject(Error('upload_timeout'));
     x.send(blob);
   });
+  // big files (videos): ask for a one-time upload link, then send the file straight to storage
+  async function mediaUploadDirect(path, blob, onProgress){
+    const d = await api({ action:'media_upload_url', path, type:blob.type, size:blob.size });
+    if (d.exists) return d;
+    await new Promise((resolve, reject) => {
+      const x = new XMLHttpRequest(); x.open('PUT', d.url); x.timeout = 900000;
+      x.setRequestHeader('Content-Type', blob.type); x.setRequestHeader('x-upsert', 'false');
+      x.upload.onprogress = e => { if (e.lengthComputable) onProgress?.(Math.round(e.loaded / e.total * 100)); };
+      x.onload = () => (x.status >= 200 && x.status < 300) || x.status === 409 ? resolve() : reject(Object.assign(Error(x.status === 413 ? 'media_too_large' : 'upload_failed'), { status:x.status }));
+      x.onerror = () => reject(Error('network_error')); x.ontimeout = () => reject(Error('upload_timeout'));
+      x.send(blob);
+    });
+    return d;
+  }
 
   /* ---------- public API ---------- */
   window.Sync = {
@@ -147,11 +161,13 @@
     },
     async logout(){ try { await api({ action:'logout' }); } catch {} auth = null; localStorage.removeItem(K.session); emit('signed-out'); },
     refresh:() => pull(true), drain,
+    call:(body) => api(body),
     ogImage:(url) => api({ action:'og_image', url }).then(d => d.image || '').catch(() => ''),
     media:{
       list:() => api({ action:'media_list' }),
       url:(path) => api({ action:'media_get', path }).then(d => d.url),
-      upload:mediaUpload
+      upload:mediaUpload,
+      uploadDirect:mediaUploadDirect
     },
     stableId: async (label) => { const h = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(label))), x => x.toString(16).padStart(2, '0')).join(''); return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20,32)}`; },
     async start(){ if (!auth) { emit('signed-out'); return; } await pull(true); await drain(); emit('signed-in'); }

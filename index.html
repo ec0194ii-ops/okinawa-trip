@@ -897,6 +897,16 @@ html.standalone body{overscroll-behavior-y:none}
 .dot-w.busy{background:var(--sea);animation:blink 1s ease-in-out infinite}
 @keyframes blink{50%{opacity:.25}}
 
+/* take the memories home / push */
+.keep-box,.push-box{border:1px solid var(--line);border-radius:18px;background:var(--paper);padding:14px;display:flex;flex-direction:column;gap:10px}
+.keep-box p,.push-box p{margin:0;font-size:13px;line-height:1.6}
+.keep-btns{display:flex;flex-direction:column;gap:8px}
+.keep-btns .btn{width:100%;display:flex;flex-direction:column;align-items:center;gap:2px}
+.keep-btns .btn small{font-size:11px;font-weight:500;opacity:.8}
+.keep-btns .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.push-box{flex-direction:row;align-items:flex-start;gap:12px}.push-box>div{flex:1;display:flex;flex-direction:column;gap:10px}
+.push-ic{font-size:22px;line-height:1}
+
 nav button{border:0;background:transparent;font:inherit;font-size:11px;letter-spacing:.12em;color:var(--soft);padding:6px 4px;display:flex;flex-direction:column;align-items:center}
 nav button[aria-current="page"]{color:var(--ink);font-weight:700}
 nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;width:5px;height:5px;border-radius:50%;background:var(--hibiscus)}
@@ -956,6 +966,11 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
     <p class="note" id="fcNote"></p>
   </section>
 
+  <section class="sec" id="pushSec" hidden>
+    <div class="sec-h"><h2>スマホに通知</h2><span>相手の家族の変更が届く</span></div>
+    <div class="push-box"><span class="push-ic" aria-hidden="true">🔔</span><div id="pushBody"></div></div>
+  </section>
+
   <section class="sec" id="reqSec">
     <div class="sec-h"><h2>アプリへのリクエスト</h2><span>匿名で送れます</span></div>
     <div class="req">
@@ -990,7 +1005,7 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
     <form class="wadd" id="wForm"><input id="wInput" aria-label="やりたいこと" placeholder="例：ジンベエザメの前で家族写真" maxlength="60" autocomplete="off"><button type="submit">追加</button></form>
     <div class="sec"><span class="note">カードからのおすすめ</span><div class="sugg" id="wSugg"></div></div>
     <div class="wlist" id="wList"></div>
-    <p class="note">試作のため、追加・いいね・スタンプはこの端末にだけ保存されます。本体では家族と共有されます。</p>
+    <p class="note">追加・いいね・「叶った」は、家族みんなに共有されます。</p>
   </div>
 
   <div class="view" id="v-spots" hidden>
@@ -1011,7 +1026,7 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
     <div id="mAdd" class="sec">
       <div class="drop" id="mDrop">
         <b>写真・動画をまとめて追加</b>
-        <p>入れた写真と動画は、家族みんなに自動で共有されます。撮った日ごとに分かれ、各日のBESTがアルバムの1ページに。写真は自動で軽くして送り、動画は1本20MBまでです。</p>
+        <p>入れた写真と動画は、家族みんなに自動で共有されます。撮った日ごとに分かれ、各日のBESTがアルバムの1ページに。写真は自動で軽くして送ります。大きい動画も、できるだけ軽くしてから送ります（1本50MBまで）。</p>
         <label class="btn" for="mFile">写真・動画を選ぶ</label>
         <input id="mFile" type="file" accept="image/*,video/*" multiple hidden>
       </div>
@@ -1034,6 +1049,10 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
       <div class="chapters" id="mChapters"></div>
       <div class="mctl"><button class="btn" id="mPlay">▶ 上映する</button><span class="note" id="mInfo"></span></div>
     </div>
+    <section class="sec keep" id="mKeep" hidden>
+      <div class="sec-h"><h2>思い出を持ち帰る</h2><span>自分の端末にも保存</span></div>
+      <div class="keep-box" id="keepBody"></div>
+    </section>
     <p class="note">写真と動画は家族だけが見られる非公開の保存場所に送ります。アルバムのBESTとひと言は、この端末だけの設定です。</p>
   </div>
 </div>
@@ -1912,7 +1931,7 @@ function renderMemory(){
   if (mTab !== 'movie') stopMovie();
   if (mTab === 'add'){
     $('mDays').innerHTML = days.map(d => { const b = bestOf(d); return `<div class="mday"><h3>${d < 0 ? '旅行日以外' : `11/${20+d}`}<small>${d < 0 ? 'アルバムには入りません' : DAYWORD[d]}</small></h3>
-      <div class="thumbs">${ps.filter(p => p.day === d).map(p => { const k = p.key || p.src; return `<button class="thumb${p.video ? ' vid' : ''}${p.status && p.status !== 'ok' ? ' st-' + p.status : ''}" data-d="${d}" data-k="${esc(k)}" ${p.video ? 'data-video="1"' : ''} ${p.status === 'fail' ? 'data-fail="1"' : ''} aria-pressed="${d >= 0 && b && (b.key || b.src) === k}" aria-label="${p.status === 'fail' ? esc(p.msg) : p.video ? '動画' : 'BESTにする'}">${p.video ? `<video src="${esc(p.src)}#t=0.5" muted playsinline preload="metadata"></video>` : `<img src="${esc(p.src)}" alt="">`}${p.status === 'up' ? `<span class="upst">${p.pct || 0}%</span>` : p.status === 'wait' ? '<span class="upst">待機中</span>' : p.status === 'fail' ? '<span class="upst fail">送り直す</span>' : ''}</button>`; }).join('')}</div></div>`; }).join('') + (uploads.some(u => u.status === 'fail') ? `<p class="note">${esc(uploads.find(u => u.status === 'fail').msg)}</p>` : '');
+      <div class="thumbs">${ps.filter(p => p.day === d).map(p => { const k = p.key || p.src; return `<button class="thumb${p.video ? ' vid' : ''}${p.status && p.status !== 'ok' ? ' st-' + p.status : ''}" data-d="${d}" data-k="${esc(k)}" ${p.video ? 'data-video="1"' : ''} ${p.status === 'fail' ? 'data-fail="1"' : ''} aria-pressed="${d >= 0 && b && (b.key || b.src) === k}" aria-label="${p.status === 'fail' ? esc(p.msg) : p.video ? '動画' : 'BESTにする'}">${p.video ? `<video src="${esc(p.src)}#t=0.5" muted playsinline preload="metadata"></video>` : `<img src="${esc(p.src)}" alt="">`}${p.status === 'up' ? `<span class="upst">${p.stage ? '軽く ' : ''}${p.pct || 0}%</span>` : p.status === 'wait' ? '<span class="upst">待機中</span>' : p.status === 'fail' ? '<span class="upst fail">送り直す</span>' : ''}</button>`; }).join('')}</div></div>`; }).join('') + (uploads.some(u => u.status === 'fail') ? `<p class="note">${esc(uploads.find(u => u.status === 'fail').msg)}</p>` : '');
   }
   if (mTab === 'album'){
     $('mTheme').innerHTML = THEMES.map(([k,l]) => `<button id="th-${k}" data-th="${k}" aria-pressed="${k===theme}">${l}</button>`).join('');
@@ -1925,6 +1944,7 @@ $('mDays').addEventListener('click', e => { const b = e.target.closest('.thumb')
 $('mTheme').addEventListener('click', e => { const b = e.target.closest('button[data-th]'); if (!b) return; theme = b.dataset.th; ls.set('okt-theme', theme); renderMemory(); });
 $('mBook').addEventListener('input', e => { const t = e.target.closest('textarea'); if (t){ captions[t.dataset.d] = t.value; ls.set('okt-captions', captions); } });
 function addFiles(files){
+  if ([...files].some(f => f.type.startsWith('video/'))) primeAudio();
   if (!Sync.signedIn) { showGate('写真を共有するには入室してください。'); return; }
   [...files].filter(f => /^(image|video)\//.test(f.type)).forEach(f => { const t = f.lastModified || Date.now();
     uploads.push({key:'local:' + uid(), file:f, src:URL.createObjectURL(f), t, day:dayOf(t), video:f.type.startsWith('video/'), status:'wait', pct:0}); });
@@ -2161,6 +2181,7 @@ const TOUR = [
   {v:'home', sel:'#flightSec', title:'着いたら「着いた！」', text:'那覇に着いたら、自分の家族の「着いた！」を押します。ふたつの家族がそろうと、お祝いが出ます。'},
   {v:'home', sel:'#fcSec', title:'旅行中の天気予報', text:'気象庁の最新の予報を、開くたびに読み込みます。旅行日が予報に入るのは11/13ごろからです。'},
   {v:'home', title:'ホーム画面に置く', text:'iPhoneはSafariで開いて「共有ボタン → ホーム画面に追加」、AndroidはChromeの「︙ → ホーム画面に追加」。ホーム画面のアイコンから、アプリみたいに全画面で開けます（最初の1回だけ合言葉をもう一度）。'},
+  {v:'home', sel:'#pushSec', title:'スマホに通知', text:'「通知をオンにする」を押すと、相手の家族が予定や候補を変えたときや写真が届いたときに、スマホに通知が届きます。iPhoneはホーム画面に追加したアプリからオンにできます。'},
   {v:'home', sel:'#reqSec', title:'アプリへのリクエスト', text:'「こんな機能がほしい」「これを共有したい」は、HOMEのいちばん下から名前なしで送れます。'},
   {v:'plan', sel:'#whoSeg', title:'PLAN：みんなで編集', text:'旅程はふたつの家族のだれでも編集できます。だれが何を変えたかが上に残り、相手の家族にはおしらせが届きます。'},
   {v:'plan', sel:'#planDays', title:'日にちを選ぶ', text:'4日間の旅程です。日付を押すと、その日の流れが写真つきで見られます。'},
@@ -2313,7 +2334,7 @@ async function toJpeg(file){
 }
 let pumping = false;
 async function pumpUploads(){
-  if (pumping) return; pumping = true;
+  if (pumping) return; pumping = true; let sentNow = 0;
   try {
     for (const it of uploads) {
       if (it.status !== 'wait') continue;
@@ -2324,21 +2345,25 @@ async function pumpUploads(){
         else {
           const type = it.file.type;
           if (!['video/mp4', 'video/quicktime', 'video/webm'].includes(type)) throw Object.assign(new Error('type'), {msg:'この形式の動画は共有できません（MP4・MOV・WebM）'});
-          if (it.file.size > 20000000) throw Object.assign(new Error('size'), {msg:'20MBを超える動画は共有できません。短く切ってから入れてください'});
           blob = it.file; ext = {'video/mp4':'mp4', 'video/quicktime':'mov', 'video/webm':'webm'}[type];
+          if (blob.size > SHRINK_FROM) { it.stage = '軽くしています'; refreshMedia();
+            const small = await shrinkVideo(blob, p => { it.pct = p; refreshMedia(); }); it.stage = ''; it.pct = 0;
+            if (small) { blob = small; ext = {'video/mp4':'mp4', 'video/webm':'webm'}[small.type] || ext; } }
+          if (blob.size > VIDEO_LIMIT) throw Object.assign(new Error('size'), {msg:'50MBを超える動画は共有できません。写真アプリで短く切ってから入れてください'});
         }
         const path = `photos/${String(Math.round(it.t)).padStart(13, '0').slice(-13)}_${await sha256hex(await blob.arrayBuffer())}.${ext}`;
-        await Sync.media.upload(path, blob, p => { it.pct = p; refreshMedia(); });
+        await (it.video ? Sync.media.uploadDirect : Sync.media.upload)(path, blob, p => { it.pct = p; refreshMedia(); });
         if (!it.video) MDB.put(path, blob).catch(() => {});
         shared.set(path, {key:path, video:it.video, t:it.t, day:it.day, src:it.src, exp:Infinity, status:'ok', inMemory:true});
-        seenMedia.add(path); saveSeenMedia(); it.status = 'done';
+        seenMedia.add(path); saveSeenMedia(); it.status = 'done'; sentNow++;
       } catch (e) {
         it.status = 'fail';
-        it.msg = e.msg || ({media_too_large:'大きすぎて送れませんでした', photo_capacity_reached:'共有の容量がいっぱいです', unsupported_media_type:'この形式は共有できません'}[e.message]) || '送れませんでした。押すと送り直します';
+        it.msg = e.msg || ({media_too_large:'大きすぎて送れませんでした（50MBまで）', photo_capacity_reached:'共有の容量がいっぱいです', unsupported_media_type:'この形式は共有できません'}[e.message]) || '送れませんでした。押すと送り直します';
       }
       refreshMedia();
     }
     uploads = uploads.filter(u => u.status !== 'done');
+    if (sentNow) Sync.call({action:'notify_media', count:sentNow}).catch(() => {});
   } finally { pumping = false; refreshMedia(); }
 }
 
@@ -2762,13 +2787,173 @@ async function fillTravel(){
   } finally { travelBusy = false; }
 }
 
+
+/* ---------- videos: shrink big ones on the phone, then send straight to storage (up to 50MB) ---------- */
+var VIDEO_LIMIT = 50 * 1024 * 1024, SHRINK_FROM = 12 * 1024 * 1024;
+var audioCtx = null;
+function primeAudio(){ try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch {} }
+// Re-records the video at up to 1280px and about 2.5Mbps. Returns null when this phone can't do it safely
+// (then the original is sent if it fits). Never returns a video without sound.
+async function shrinkVideo(file, onPct){
+  if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream || !audioCtx) return null;
+  const mime = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(t => { try { return MediaRecorder.isTypeSupported(t); } catch { return false; } });
+  if (!mime) return null;
+  const url = URL.createObjectURL(file), v = document.createElement('video');
+  v.src = url; v.playsInline = true; v.preload = 'auto'; v.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0';
+  document.body.appendChild(v);
+  const cleanup = () => { try { v.pause(); } catch {} v.remove(); URL.revokeObjectURL(url); };
+  try {
+    await new Promise((res, rej) => { v.onloadedmetadata = res; v.onerror = rej; setTimeout(() => rej(new Error('meta')), 15000); });
+    if (!isFinite(v.duration)) {    // some files don't say how long they are until the end is read
+      await new Promise(res => { v.ondurationchange = () => { if (isFinite(v.duration)) res(); }; v.currentTime = 1e9; setTimeout(res, 8000); });
+      v.currentTime = 0; await new Promise(res => { v.onseeked = res; setTimeout(res, 3000); });
+    }
+    if (!v.videoWidth || !isFinite(v.duration) || v.duration > 600) return null;
+    const sc = Math.min(1, 1280 / Math.max(v.videoWidth, v.videoHeight)), w = Math.round(v.videoWidth * sc / 2) * 2, h = Math.round(v.videoHeight * sc / 2) * 2;
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+    const stream = c.captureStream(30);
+    if (audioCtx.state !== 'running') { try { await audioCtx.resume(); } catch {} }
+    if (audioCtx.state !== 'running') return null;
+    const src = audioCtx.createMediaElementSource(v), dest = audioCtx.createMediaStreamDestination(); src.connect(dest);
+    const at = dest.stream.getAudioTracks(); if (!at.length) return null; at.forEach(t => stream.addTrack(t));
+    const rec = new MediaRecorder(stream, {mimeType:mime, videoBitsPerSecond:2500000, audioBitsPerSecond:128000});
+    const chunks = []; rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise(r => { rec.onstop = r; });
+    let last = Date.now(), alive = true;
+    const draw = () => { if (!alive) return; g.drawImage(v, 0, 0, w, h); onPct(Math.min(99, Math.round(v.currentTime / v.duration * 100))); last = Date.now();
+      if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(draw); else requestAnimationFrame(draw); };
+    rec.start(1000);
+    try { await v.play(); } catch { alive = false; rec.stop(); await stopped; return null; }
+    draw();
+    const ok = await new Promise(res => { v.onended = () => res(true); const iv = setInterval(() => { if (!alive) { clearInterval(iv); return; } if (Date.now() - last > 15000) { clearInterval(iv); res(false); } if (v.ended) { clearInterval(iv); res(true); } }, 1000); });
+    alive = false; rec.stop(); await stopped; try { src.disconnect(); } catch {}
+    if (!ok) return null;
+    const out = new Blob(chunks, {type:mime.split(';')[0]});
+    return out.size > 10000 && out.size < file.size * .9 ? out : null;
+  } catch (e) { if (window.OKT_ENDPOINT) console.error('shrink failed', e && e.message); return null; }
+  finally { cleanup(); }
+}
+if (window.OKT_ENDPOINT) window.__oktMedia = { setShrink: n => { SHRINK_FROM = n; }, shrinkVideo, primeAudio, audio: () => audioCtx && audioCtx.state };
+
+/* ---------- take the memories home: save to Photos, ZIP download, trip record ---------- */
+var keepBusy = false;
+const pad2 = n => String(n).padStart(2, '0');
+function fileNameFor(x, i){ const p = jstParts(new Date(x.t)); const ext = (x.key.split('.').pop() || 'jpg').toLowerCase();
+  return `okinawa_${p.mo}-${pad2(p.day)}_${pad2(p.h)}${pad2(p.m)}_${String(i + 1).padStart(3, '0')}.${ext}`; }
+const keepItems = () => [...shared.values()].filter(x => x.inMemory).sort((a, b) => a.t - b.t);
+async function fetchMedia(x){
+  if (!x.video) { try { const b = await MDB.get(x.key); if (b) return b; } catch {} }
+  const u = await Sync.media.url(x.key); const r = await fetch(u); if (!r.ok) throw new Error('fetch'); return await r.blob();
+}
+function tripRecordHTML(){
+  const days = [['11/20','金'],['11/21','土'],['11/22','日'],['11/23','月']];
+  const rows = days.map(([dt, wd], d) => { const st = P.stops.filter(s => s.d === d).sort(byTime);
+    return `<h2>${dt}（${wd}）</h2><ul>${st.map(s => { const pk = P.ideas.find(i => i.stop === s.id && i.picked);
+      return `<li><b>${esc(s.t || '未定')}</b> ${esc(s.title)}${pk ? `（${esc(pk.name)}）` : ''}${s.note ? `<br><small>${esc(s.note)}</small>` : ''}</li>`; }).join('')}</ul>`; }).join('');
+  const w = wishes.map(x => `<li>${x.done ? '✓ ' : ''}${esc(x.t)}${x.done ? ` <small>（${esc(x.done)} 叶った）</small>` : ''}</li>`).join('');
+  return `<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>沖縄旅行 2026 の記録</title>
+<style>body{font-family:-apple-system,"Hiragino Sans",sans-serif;max-width:640px;margin:0 auto;padding:24px 16px;color:#14384c;background:#f8f4ed;line-height:1.6}h1{font-size:24px}h2{font-size:18px;margin-top:28px;border-bottom:1px solid #e7dfd4}li{margin:8px 0}small{color:#6b8794}</style>
+<h1>大橋家 × 山田家　沖縄旅行 2026.11.20–23</h1>${rows}<h2>WISH（やりたいこと）</h2><ul>${w}</ul><p><small>Okinawa Trip アプリから書き出し</small></p></html>`;
+}
+function downloadBlob(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); }
+function loadZip(){ return window.JSZip ? Promise.resolve() : new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+var shareIdx = 0, pendingShare = null;
+const canShareFiles = () => { try { return !!navigator.canShare && navigator.canShare({files:[new File([new Blob(['x'], {type:'image/jpeg'})], 'x.jpg', {type:'image/jpeg'})]}); } catch { return false; } };
+function renderKeep(){
+  const box = $('mKeep'); if (!box) return;
+  const items = keepItems(), n = items.length, nv = items.filter(x => x.video).length;
+  box.hidden = !Sync.signedIn;
+  const share = canShareFiles();
+  if (shareIdx >= n) shareIdx = 0;
+  $('keepBody').innerHTML = `<p>${n ? `いま共有されているのは、写真${n - nv}枚${nv ? `と動画${nv}本` : ''}です。` : 'まだ共有された写真・動画はありません。'}自分のスマホやパソコンにも残しておくと安心です。</p>
+    <div class="keep-btns">
+      ${share && n ? `<button type="button" class="btn" data-keep="share">${pendingShare ? '保存画面を開く' : '写真アプリに保存'}<small>${shareIdx + 1}〜${Math.min(n, shareIdx + 10)}件目 / 全${n}件</small></button>` : ''}
+      ${n ? `<button type="button" class="btn ${share ? 'ghost' : ''}" data-keep="zip">まとめてダウンロード（ZIP）</button>` : ''}
+      <button type="button" class="btn ghost" data-keep="record">旅の記録（予定・WISH）を保存</button>
+    </div><p class="note" id="keepMsg"></p>`;
+}
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-keep]'); if (!b || keepBusy) return;
+  const msg = t => { const m = $('keepMsg'); if (m) m.textContent = t; };
+  const items = keepItems(), kind = b.dataset.keep;
+  if (kind === 'record') { downloadBlob(new Blob([tripRecordHTML()], {type:'text/html'}), 'okinawa-trip-2026_記録.html'); return; }
+  keepBusy = true; b.disabled = true;
+  try {
+    if (kind === 'share') {
+      if (pendingShare) {           // second tap: open the share sheet right away (iPhone needs a fresh tap)
+        const files = pendingShare; pendingShare = null; keepBusy = false; b.disabled = false;
+        try { await navigator.share({files}); shareIdx += files.length; msg(shareIdx >= items.length ? 'すべて保存しました！' : `${shareIdx}件まで終わりました。続きもどうぞ。`); }
+        catch (er) { msg(er && er.name === 'AbortError' ? 'キャンセルしました' : '保存画面を開けませんでした'); }
+        renderKeep(); return;
+      }
+      const part = items.slice(shareIdx, shareIdx + 10); msg('準備しています…'); const files = [];
+      for (const [k, x] of part.entries()) { const bl = await fetchMedia(x); files.push(new File([bl], fileNameFor(x, shareIdx + k), {type:bl.type || (x.video ? 'video/mp4' : 'image/jpeg')})); msg(`準備しています… ${k + 1}/${part.length}`); }
+      pendingShare = files; renderKeep(); $('keepMsg').textContent = '準備ができました。「保存画面を開く」を押して「画像を保存」を選んでね。'; return;
+    }
+    if (kind === 'zip') {
+      msg('準備しています…'); await loadZip();
+      const LIMIT = 180 * 1024 * 1024; let zip = new JSZip(), size = 0, part = 1, done = 0;
+      zip.file('旅の記録.html', tripRecordHTML());
+      const flush = async last => { msg(`ZIPを作っています…（パート${part}）`); const blob = await zip.generateAsync({type:'blob', compression:'STORE'});
+        downloadBlob(blob, `okinawa-trip-2026${part > 1 || !last ? `_part${part}` : ''}.zip`); part++; zip = new JSZip(); size = 0; };
+      for (const [i, x] of items.entries()) {
+        const bl = await fetchMedia(x);
+        if (size && size + bl.size > LIMIT) await flush(false);
+        zip.file(fileNameFor(x, i), bl); size += bl.size; done++; msg(`ダウンロード中… ${done}/${items.length}`);
+      }
+      await flush(true); msg(part > 2 ? `${part - 1}つのZIPに分けて保存しました。` : '保存しました。');
+    }
+  } catch { msg('途中でうまくいきませんでした。電波のいいところでもう一度試してください。'); }
+  finally { keepBusy = false; b.disabled = false; }
+});
+
+/* ---------- push notifications on the phone ---------- */
+var PUSH_OK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && location.protocol === 'https:';
+const keyBytes = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+async function pushState(){
+  if (!PUSH_OK) return IOS && !STANDALONE ? 'ios-browser' : 'unsupported';
+  if (Notification.permission === 'denied') return 'denied';
+  try { const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription(); return sub && Notification.permission === 'granted' ? 'on' : 'off'; } catch { return 'off'; }
+}
+async function renderPush(){
+  const sec = $('pushSec'); if (!sec) return;
+  const st = Sync.signedIn ? await pushState() : 'unsupported';
+  sec.hidden = st === 'on' || st === 'unsupported';
+  $('pushBody').innerHTML = st === 'ios-browser' ? '<p>iPhoneでは、ホーム画面に追加したアプリから通知をオンにできます。下の「ホーム画面に置けます」から追加してね。</p>'
+    : st === 'denied' ? '<p>このスマホでは通知がブロックされています。スマホの設定で、このアプリ（またはブラウザ）の通知を許可すると届くようになります。</p>'
+    : '<p>相手の家族が予定や候補を変えたとき、写真が届いたときに、スマホに通知が届きます。</p><button type="button" class="btn" data-push-on>通知をオンにする</button>';
+}
+async function enablePush(btn){
+  try {
+    const perm = await Notification.requestPermission();     // must be the first thing after the tap (iPhone)
+    if (perm !== 'granted') { renderPush(); return; }
+    btn && (btn.disabled = true, btn.textContent = '設定しています…');
+    const reg = await navigator.serviceWorker.ready;
+    const {key} = await Sync.call({action:'push_key'});
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:keyBytes(key)});
+    await Sync.call({action:'push_subscribe', subscription:sub.toJSON()});
+    ls.set('okt-push-synced', Date.now()); toastNote('通知をオンにしました！');
+  } catch { toastNote('通知をオンにできませんでした'); }
+  renderPush();
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-push-on]'); if (b) enablePush(b); });
+// keep the server's copy of this phone's subscription fresh (and tied to the right family)
+async function syncPush(){
+  if (!PUSH_OK || !Sync.signedIn || Notification.permission !== 'granted') return;
+  if (Date.now() - ls.get('okt-push-synced', 0) < 864e5) return;
+  try { const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription(); if (!sub) return;
+    await Sync.call({action:'push_subscribe', subscription:sub.toJSON()}); ls.set('okt-push-synced', Date.now()); } catch {}
+}
+
+{ const _rm = renderMemory; renderMemory = function(){ _rm.apply(this, arguments); renderKeep(); }; }
 /* ---------- wiring ---------- */
 var booted = true;
 function rebuildAll(){
   rebuildP(); rebuildWishes(); rebuildArrivals();
   lastKey = ''; lastMinute = ''; render(); renderNotices(); renderReq();
   if (view === 'plan') renderPlan(); if (view === 'wish') renderWish(); if (view === 'spots') renderSpots();
-  setTimeout(fillWebPhotos, 1500); setTimeout(fillTravel, 2500); renderInstall();
+  setTimeout(fillWebPhotos, 1500); setTimeout(fillTravel, 2500); renderInstall(); renderPush(); syncPush();
 }
 Sync.on(why => {
   if (why === 'signed-out') { showGate('入室の期限が切れました。合言葉でもう一度入室してください。'); renderStatus(); return; }
