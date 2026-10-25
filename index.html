@@ -910,6 +910,8 @@ html.standalone body{overscroll-behavior-y:none}
 .sp-del{margin-left:auto;border:1px solid var(--line);background:transparent;color:var(--soft);border-radius:999px;padding:3px 10px;font:inherit;font-size:11.5px}
 .sp-del.armed{background:#c8553d;border-color:#c8553d;color:#fff;font-weight:700}
 .spot .lk{display:flex;align-items:center;gap:12px}
+.pill.decided{background:#c8553d;color:#fff}
+.stop .was{font-size:12px;color:var(--soft)}
 nav button{border:0;background:transparent;font:inherit;font-size:11px;letter-spacing:.12em;color:var(--soft);padding:6px 4px;display:flex;flex-direction:column;align-items:center}
 nav button[aria-current="page"]{color:var(--ink);font-weight:700}
 nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;width:5px;height:5px;border-radius:50%;background:var(--hibiscus)}
@@ -1629,10 +1631,11 @@ function renderPlan(){
     const ideas = P.ideas.filter(i => i.stop === s.id).sort((a,b) => (b.picked - a.picked) || (likeCount(b) - likeCount(a)));
     const a = atOf(s), cls = s === next && tripIdx >= 0 && tripIdx <= 3 ? 'now' : a && a <= d ? 'past' : '';
     const drive = driveLine(s);
-    return slot(k) + drive + `<div class="stop ${cls}"><time>${s.t || '未定'}</time><div class="scard">${imgFor(s) ? `<img src="${imgFor(s)}" alt="" loading="lazy">` : ''}<div class="in">
-      <div class="meta"><span class="pill ${statusPill(s.status)}">${s.status}</span>${s.by ? famChip(s.by) : ''}</div>
-      <h3>${esc(s.title)}</h3>${s.note ? `<p>${esc(s.note)}</p>` : ''}${kidsOn ? kidTipHTML(s) : ''}
-      ${safeUrl(s.url) || s.spot || navDest(s) ? `<div class="lk">${creditOf(s.img) ? `<span class="credit-i">写真: ${creditOf(s.img)}</span>` : ''}${safeUrl(s.url) ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">HP ↗</a>` : ''}${s.spot ? `<a href="${mapUrl(s.title.replace(/ チェックイン|で集合|でランチ.*$/,''))}" target="_blank" rel="noopener">地図 ↗</a>` : ''}${navDest(s) ? `<a class="nav-a" href="${navUrl(navDest(s))}" target="_blank" rel="noopener">ナビ ↗</a>` : ''}</div>` : ''}
+    const pk = ideas.find(i => i.picked), pimg = (pk && imgFor(pk)) || imgFor(s), purl = pk && safeUrl(pk.url) ? pk.url : s.url;
+    return slot(k) + drive + `<div class="stop ${cls}${pk ? ' chosen' : ''}"><time>${s.t || '未定'}</time><div class="scard">${pimg ? `<img src="${pimg}" alt="" loading="lazy">` : ''}<div class="in">
+      <div class="meta">${pk ? '<span class="pill decided">決定</span>' : `<span class="pill ${statusPill(s.status)}">${s.status}</span>`}${s.by ? famChip(s.by) : ''}</div>
+      ${pk ? `<h3>${esc(pk.name)}</h3><p class="was">${esc(s.title)}${pk.note ? ' · ' + esc(pk.note) : ''}</p>` : `<h3>${esc(s.title)}</h3>${s.note ? `<p>${esc(s.note)}</p>` : ''}`}${kidsOn ? kidTipHTML(s) : ''}
+      ${safeUrl(purl) || s.spot || navDest(s) ? `<div class="lk">${creditOf(pk ? pk.img : s.img) ? `<span class="credit-i">写真: ${creditOf(pk ? pk.img : s.img)}</span>` : ''}${safeUrl(purl) ? `<a href="${esc(purl)}" target="_blank" rel="noopener">HP ↗</a>` : ''}${s.spot ? `<a href="${mapUrl(pk ? (pk.map || pk.name) : s.title.replace(/ チェックイン|で集合|でランチ.*$/,''))}" target="_blank" rel="noopener">地図 ↗</a>` : ''}${navDest(s) ? `<a class="nav-a" href="${navUrl(navDest(s))}" target="_blank" rel="noopener">ナビ ↗</a>` : ''}</div>` : ''}
       <div class="acts"><button type="button" data-edit-stop="${s.id}">✎ 編集</button><button type="button" class="ask" data-add-idea="${s.id}">＋ 場所候補</button></div>
       ${ideas.length ? `<div class="ideas"><div class="ideas-h">場所候補 ${ideas.length}<small>選ばなくてもOK</small></div><div class="irow">${ideas.map(ideaCard).join('')}<button type="button" class="idea add" data-add-idea="${s.id}"><b>＋</b>場所候補を追加</button></div></div>` : ''}
     </div></div></div>`;
@@ -2701,7 +2704,7 @@ if (window.OKT_ENDPOINT) window.__oktNav = { hero: d => renderHero(d), navDest, 
    Places are looked up on OpenStreetMap, driving time comes from the OSRM route service.
    The result is saved on the plan (quietly), so everyone sees the same line. A time typed by hand is never overwritten. */
 var AUTO_MARK = '（目安）';
-var GEO = ls.get('okt-geo2', {}), ROUTE = ls.get('okt-route2', {});
+var GEO = ls.get('okt-geo3', {}), ROUTE = ls.get('okt-route3', {});
 var geoQ = Promise.resolve();
 // street addresses of the trip's main places (looked up with the official GSI address search first)
 var ADDR = [
@@ -2733,11 +2736,11 @@ function geocode(q){
     const page = PLACE_URL[q];
     if (!addr && page && /tabelog|gnavi|hotpepper|retty|ikyu|jalan/.test(page) && Sync.signedIn) {
       const info = await Sync.placeInfo(page);
-      if (info && info.lat && info.lng) { GEO[q] = [info.lat, info.lng]; ls.set('okt-geo2', GEO); return; }
+      if (info && info.lat && info.lng) { GEO[q] = [info.lat, info.lng]; ls.set('okt-geo3', GEO); return; }
       if (info && info.address) addr = info.address;
     }
-    if (addr) { const g = await gsi(addr); if (g) { GEO[q] = g; ls.set('okt-geo2', GEO); return; } }
-    if (page && /tabelog|gnavi|hotpepper|retty/.test(page) && Sync.signedIn) { GEO[q] = null; ls.set('okt-geo2', GEO); return; }   // a shop: never guess its place from its name alone
+    if (addr) { const g = await gsi(addr); if (g) { GEO[q] = g; ls.set('okt-geo3', GEO); return; } }
+    if (page && /tabelog|gnavi|hotpepper|retty/.test(page) && Sync.signedIn) { GEO[q] = null; ls.set('okt-geo3', GEO); return; }   // a shop: never guess its place from its name alone
     for (const t of tries) {
       try {
         const r = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=jp&accept-language=ja&viewbox=127.55,26.95,128.45,25.95&bounded=1&q=' + encodeURIComponent(t), {referrerPolicy:'origin'});
@@ -2745,7 +2748,7 @@ function geocode(q){
       } catch {}
       await sleepMs(1100); if (hit) break;
     }
-    if (hit || answered) { GEO[q] = hit; ls.set('okt-geo2', GEO); }   // a network failure is retried later
+    if (hit || answered) { GEO[q] = hit; ls.set('okt-geo3', GEO); }   // a network failure is retried later
   });
   return geoQ.then(() => GEO[q] || null);
 }
@@ -2768,7 +2771,7 @@ async function legBetween(fromQ, toQ){
     }
   }
   const known = (fromQ in GEO) && (toQ in GEO);
-  if (answered || (known && (!a || !b))) { ROUTE[key] = out; ls.set('okt-route2', ROUTE); }
+  if (answered || (known && (!a || !b))) { ROUTE[key] = out; ls.set('okt-route3', ROUTE); }
   return out;
 }
 // where a stop starts from: the stop before it that day, or the hotel for the first stop of a day spent there
@@ -2786,8 +2789,9 @@ function driveLine(s){
   if (!from) return '';
   const fromHotel = from.d !== s.d;
   if (!navDest(from) || !navDest(s)) return `<div class="drive wait"><div class="ln"><span class="dot-w"></span>移動時間は、${!navDest(s) ? 'この予定' : '前の予定'}の場所が決まったら表示</div></div>`;
-  if (s.go) return `<div class="drive"><div class="ln">${s.walk ? walkIcon : carIcon}${fromHotel ? 'ホテルから ' : ''}${esc(s.go.replace(AUTO_MARK, ''))}<small class="aim">目安</small></div></div>`;
-  const key = navDest(from) + '→' + navDest(s); if (key in ROUTE) return '';   // looked up, but no route found
+  if (s.go && s.go.endsWith(AUTO_MARK)) return `<div class="drive"><div class="ln">${s.walk ? walkIcon : carIcon}${fromHotel ? 'ホテルから ' : ''}${esc(s.go.replace(AUTO_MARK, ''))}<small class="aim">目安</small></div></div>`;
+  const key = navDest(from) + '→' + navDest(s);
+  if (key in ROUTE) return `<div class="drive wait"><div class="ln"><span class="dot-w"></span>場所が見つからず、移動時間を出せませんでした（予定の「編集」で入れられます）</div></div>`;
   return `<div class="drive wait"><div class="ln"><span class="dot-w busy"></span>移動時間を調べています…</div></div>`;
 }
 // fill in / refresh the saved times (one device does it, everyone sees it)
