@@ -202,7 +202,7 @@ nav li.on::after{content:"";display:block;margin:3px auto 0;width:5px;height:5px
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 /* PLAN */
-.days{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.days{display:grid;grid-template-columns:repeat(var(--nd,4),minmax(0,1fr));gap:6px}
 .days button{border:1px solid var(--line);background:var(--paper);border-radius:16px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.25}
 .days button b{font-family:var(--f-display);font-size:20px}
 .days button small{font-size:10.5px;color:var(--soft);letter-spacing:.1em}
@@ -221,6 +221,11 @@ nav li.on::after{content:"";display:block;margin:3px auto 0;width:5px;height:5px
 .scard{background:var(--paper);border:1px solid var(--line);border-radius:20px;overflow:hidden}
 .stop.now .scard{border-color:var(--hibiscus);box-shadow:0 0 0 3px color-mix(in srgb,var(--hibiscus) 22%,transparent)}
 .stop.past .scard{opacity:.55}
+.stop.mine .scard{border-style:dashed;border-color:var(--sea);background:color-mix(in srgb,var(--sea) 5%,var(--paper))}
+.pill.mine{background:color-mix(in srgb,var(--sea) 16%,transparent);color:var(--sea)}
+.booking{display:flex;gap:8px;align-items:flex-start;background:var(--sand);border-radius:12px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;word-break:break-word}
+.booking small{flex:none;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;color:var(--soft);padding-top:2px}
+.daysplit{font-size:12.5px;color:var(--sea);background:color-mix(in srgb,var(--sea) 8%,transparent);border-radius:12px;padding:6px 10px;margin:-4px 0 10px}
 .scard img{display:block;width:100%;aspect-ratio:16/7;object-fit:cover;max-width:100%}
 .scard .in{padding:12px 14px;display:flex;flex-direction:column;gap:6px}
 .scard h3{font-size:17px}
@@ -989,7 +994,7 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
   </div>
 
   <div class="view" id="v-plan" hidden>
-    <header class="ph"><div class="ph-top"><span class="eyebrow">Plan</span><button type="button" class="help-b" data-help="plan" id="help-plan">？ 使い方</button></div><h1>4日間の旅程</h1><p>だれでも予定を足したり変えたりできます。気になる場所は「場所候補」に入れておこう。</p></header>
+    <header class="ph"><div class="ph-top"><span class="eyebrow">Plan</span><button type="button" class="help-b" data-help="plan" id="help-plan">？ 使い方</button></div><h1 id="planH1">4日間の旅程</h1><p>だれでも予定を足したり変えたりできます。気になる場所は「場所候補」に入れておこう。</p></header>
     <div class="who"><span>編集する人</span><div class="seg" id="whoSeg" role="group" aria-label="編集する人"></div></div>
     <div class="log" id="planLog"></div>
     <div class="days" id="planDays" role="group" aria-label="日付を選ぶ"></div>
@@ -1105,7 +1110,7 @@ nav button[aria-current="page"]::after{content:"";display:block;margin-top:3px;w
 <script>
 (()=>{
 const JST = s => new Date(s + '+09:00');
-const START = JST('2026-11-20T12:10'), END = JST('2026-11-23T23:59');
+const START = JST('2026-11-20T12:10'); let END = JST('2026-11-23T23:59');
 const DAY0 = JST('2026-11-20T00:00');
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2,'0');
@@ -1540,8 +1545,12 @@ const DAYS = [
   {wd:'FRI', title:'11/20 金　沖縄に到着', sub:'それぞれの空港から那覇へ。着いたら「着いた！」を押そう。'},
   {wd:'SAT', title:'11/21 土　みんなで合流', sub:'朝10時、ウミカジテラスでふたつの家族が合流。森を歩いて、ホテルへ。'},
   {wd:'SUN', title:'11/22 日　美ら海と最後の夜', sub:'朝は水族館、夕方は海へ。夜はふたつの家族で過ごす最後の夜。'},
-  {wd:'MON', title:'11/23 月　沖縄とのお別れ', sub:'帰りの便とチェックアウト。'}
+  {wd:'MON', title:'11/23 月　沖縄とのお別れ', sub:'帰りの便とチェックアウト。'},
+  {wd:'TUE', title:'11/24 火　わが家の帰る日', sub:'この日の予定は、わが家だけに見えています。'}
 ];
+// The days this family sees: 11/24 appears only when this family has plans that day.
+const dayCount = () => P.stops.some(s => s.d === 4) ? 5 : 4;
+const dayText = i => { const x = DAYS[i]; if (i === 3 && dayCount() > 4) return {...x, title:'11/23 月　山田家とお別れ', sub:'山田家は朝の便で羽田へ。わが家はもう1泊。'}; return x; };
 function seedPlan(){
   const S = (o) => ({id:uid(), by:'', note:'', url:'', img:'', go:'', spot:true, status:'予定', ...o});
   const I = (o) => ({id:uid(), by:'', note:'', url:'', img:'', likes:{}, picked:false, ...o});
@@ -1584,13 +1593,14 @@ function rebuildP(){
   me = Sync.family || me;
   P.stops = Sync.list('plan').map(r => { const p = r.payload; return {
     id:r.id, d:p.d, t:p.t || '', title:p.title, note:p.note || '', status:OLDST(p.status), url:p.url || '', img:p.img || p.imageUrl || '',
-    go:p.travelNote || '', walk:p.travelMode === 'walk', spot:p.spot !== undefined ? !!p.spot : !/｜/.test(p.title || ''), by:p.updatedBy || '', legacy:p }; });
+    go:p.travelNote || '', walk:p.travelMode === 'walk', spot:p.spot !== undefined ? !!p.spot : !/｜/.test(p.title || ''), by:p.updatedBy || '', only:p.only || '', booking:p.booking || '', legacy:p }; });
+  END = JST(dayCount() > 4 ? '2026-11-24T23:59' : '2026-11-23T23:59');
   P.ideas = Sync.list('spot').filter(r => r.payload.type !== 'arrival').map(r => { const p = r.payload; return {
     id:r.id, d:Number.isInteger(p.d) ? p.d : -1, stop:p.stop || null, name:p.name || p.title, note:p.note ?? (p.type === 'idea' ? '' : (p.desc && p.desc !== '新しく追加した候補' ? p.desc : '')),
     url:p.url || '', img:p.img || p.imageUrl || '', map:p.map || '', ref:p.ref || '', typo:p.typo || '', cat:p.cat || '',
     likes:p.likes || {}, picked:!!p.picked, by:p.updatedBy || '' }; });
 }
-const stopPayload = v => ({d:v.d, t:v.t || '', title:v.title, note:v.note || '', status:v.status, url:v.url || '', img:v.img || '', travelNote:v.go || '', travelMode:v.walk ? 'walk' : 'auto', spot:v.spot !== false});
+const stopPayload = v => ({d:v.d, t:v.t || '', title:v.title, note:v.note || '', status:v.status, url:v.url || '', img:v.img || '', travelNote:v.go || '', travelMode:v.walk ? 'walk' : 'auto', spot:v.spot !== false, only:v.only || '', booking:v.booking || ''});
 const ideaPayload = v => ({type:'idea', d:v.d, stop:v.stop || '', name:v.name, title:v.name, note:v.note || '', desc:v.note || '', url:v.url || '', img:v.img || '', map:v.map || '', mapQuery:v.map || v.name, ref:v.ref || '', typo:v.typo || '', cat:v.cat || ''});
 let planDay = 1, insertMode = false;
 function toastNote(msg){ let t = $('toast'); if (!t){ t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role','status'); document.body.appendChild(t); } t.textContent = msg; t.className = 'show'; clearTimeout(t._h); t._h = setTimeout(() => t.className = '', 2200); }
@@ -1614,8 +1624,11 @@ function renderPlan(){
   const d = now(), tripIdx = Math.floor((d - DAY0)/864e5);
   $('whoSeg').innerHTML = `<span class="fam ${famCls(me)}" style="font-size:12.5px;padding:3px 10px">${esc(me || '未入室')}</span><button type="button" class="mini-btn" data-who="switch">家族を切り替える</button>`;
   $('planLog').innerHTML = changeLog(['plan','spot']).slice(0, 3).map(l => `<div>${famChip(l.who)}<span>${esc(l.text)}</span><time>${ago(l.at)}</time></div>`).join('');
-  $('planDays').innerHTML = DAYS.map((x,i) => { const c = P.ideas.filter(z => z.d === i).length; return `<button id="pd-${i}" data-i="${i}" aria-pressed="${i===planDay}"><small>${x.wd}</small><b>11/${20+i}</b><small>${i===tripIdx ? 'TODAY' : c ? `候補 ${c}` : 'DAY '+i}</small></button>`; }).join('');
-  $('planTitle').textContent = DAYS[planDay].title; $('planSub').textContent = DAYS[planDay].sub;
+  if (planDay >= dayCount()) planDay = dayCount() - 1;
+  $('planDays').style.setProperty('--nd', dayCount());
+  $('planH1').textContent = `${dayCount()}日間の旅程`;
+  $('planDays').innerHTML = DAYS.slice(0, dayCount()).map((x,i) => { const c = P.ideas.filter(z => z.d === i).length; return `<button id="pd-${i}" data-i="${i}" aria-pressed="${i===planDay}"><small>${x.wd}</small><b>11/${20+i}</b><small>${i===tripIdx ? 'TODAY' : c ? `候補 ${c}` : 'DAY '+i}</small></button>`; }).join('');
+  $('planTitle').textContent = dayText(planDay).title; $('planSub').textContent = dayText(planDay).sub;
   const stops = P.stops.filter(s => s.d === planDay).sort(byTime);
   $('planRibbon').innerHTML = stops.map(s => { const pk = P.ideas.find(i => i.stop === s.id && i.picked); return `<span>${esc(pk ? pk.name : s.title.replace(/^.*｜/,''))}</span>`; }).join('<i></i>');
   const atOf = s => s.t ? new Date(DAY0.getTime() + s.d*864e5 + (+s.t.slice(0,2))*36e5 + (+s.t.slice(3))*6e4) : null;
@@ -1627,14 +1640,15 @@ function renderPlan(){
     const m = a != null && b != null ? (a + b)/2 : a != null ? a + 90 : b != null ? b - 60 : 12*60;
     return `<div class="slot-row"><button type="button" class="slot" data-time="${toT(m)}"><b>＋ ここに入れる</b><small>${toT(m)}ごろ</small></button></div>`; };
   $('planTl').classList.toggle('inserting', insertMode);
-  $('planTl').innerHTML = (insertMode ? `<div class="ins-ban"><b>どこに入れる？</b><span>入れたいところの「＋ ここに入れる」をタップ。ほかの日にするなら上の日付を押してね。</span><button type="button" class="mini-btn" id="insCancel">やめる</button></div>` : '') + stops.map((s, k) => {
+  const mineN = stops.filter(s => s.only).length;
+  $('planTl').innerHTML = (mineN && !insertMode ? `<div class="daysplit">🔒 点線のカードは${esc(me)}だけの予定です。${esc(FAMS.find(f => f !== me) || 'ほかの家族')}には見えません。</div>` : '') + (insertMode ? `<div class="ins-ban"><b>どこに入れる？</b><span>入れたいところの「＋ ここに入れる」をタップ。ほかの日にするなら上の日付を押してね。</span><button type="button" class="mini-btn" id="insCancel">やめる</button></div>` : '') + stops.map((s, k) => {
     const ideas = P.ideas.filter(i => i.stop === s.id).sort((a,b) => (b.picked - a.picked) || (likeCount(b) - likeCount(a)));
-    const a = atOf(s), cls = s === next && tripIdx >= 0 && tripIdx <= 3 ? 'now' : a && a <= d ? 'past' : '';
+    const a = atOf(s), cls = s === next && tripIdx >= 0 && tripIdx < dayCount() ? 'now' : a && a <= d ? 'past' : '';
     const drive = driveLine(s);
     const pk = ideas.find(i => i.picked), pimg = (pk && imgFor(pk)) || imgFor(s), purl = pk && safeUrl(pk.url) ? pk.url : s.url;
-    return slot(k) + drive + `<div class="stop ${cls}${pk ? ' chosen' : ''}"><time>${s.t || '未定'}</time><div class="scard">${pimg ? `<img src="${pimg}" alt="" loading="lazy">` : ''}<div class="in">
-      <div class="meta">${pk ? '<span class="pill decided">決定</span>' : `<span class="pill ${statusPill(s.status)}">${s.status}</span>`}${s.by ? famChip(s.by) : ''}</div>
-      ${pk ? `<h3>${esc(pk.name)}</h3><p class="was">${esc(s.title)}${pk.note ? ' · ' + esc(pk.note) : ''}</p>` : `<h3>${esc(s.title)}</h3>${s.note ? `<p>${esc(s.note)}</p>` : ''}`}${kidsOn ? kidTipHTML(s) : ''}
+    return slot(k) + drive + `<div class="stop ${cls}${pk ? ' chosen' : ''}${s.only ? ' mine' : ''}"><time>${s.t || '未定'}</time><div class="scard">${pimg ? `<img src="${pimg}" alt="" loading="lazy">` : ''}<div class="in">
+      <div class="meta">${pk ? '<span class="pill decided">決定</span>' : `<span class="pill ${statusPill(s.status)}">${s.status}</span>`}${s.only ? `<span class="pill mine">🔒 ${esc(s.only)}だけ</span>` : s.by ? famChip(s.by) : ''}</div>
+      ${pk ? `<h3>${esc(pk.name)}</h3><p class="was">${esc(s.title)}${pk.note ? ' · ' + esc(pk.note) : ''}</p>` : `<h3>${esc(s.title)}</h3>${s.note ? `<p>${esc(s.note)}</p>` : ''}`}${s.booking ? `<div class="booking"><small>予約</small><span>${esc(s.booking)}</span></div>` : ''}${kidsOn ? kidTipHTML(s) : ''}
       ${safeUrl(purl) || s.spot || navDest(s) ? `<div class="lk">${creditOf(pk ? pk.img : s.img) ? `<span class="credit-i">写真: ${creditOf(pk ? pk.img : s.img)}</span>` : ''}${safeUrl(purl) ? `<a href="${esc(purl)}" target="_blank" rel="noopener">HP ↗</a>` : ''}${s.spot ? `<a href="${mapUrl(pk ? (pk.map || pk.name) : s.title.replace(/ チェックイン|で集合|でランチ.*$/,''))}" target="_blank" rel="noopener">地図 ↗</a>` : ''}${navDest(s) ? `<a class="nav-a" href="${navUrl(navDest(s))}" target="_blank" rel="noopener">ナビ ↗</a>` : ''}</div>` : ''}
       <div class="acts"><button type="button" data-edit-stop="${s.id}">✎ 編集</button><button type="button" class="ask" data-add-idea="${s.id}">＋ 場所候補</button></div>
       ${ideas.length ? `<div class="ideas"><div class="ideas-h">場所候補 ${ideas.length}<small>選ばなくてもOK</small></div><div class="irow">${ideas.map(ideaCard).join('')}<button type="button" class="idea add" data-add-idea="${s.id}"><b>＋</b>場所候補を追加</button></div></div>` : ''}
@@ -1717,7 +1731,8 @@ function paintWizard(){
       <label class="f">場所・やること<input id="edN" maxlength="60" placeholder="例：古宇利大橋をドライブ" autocomplete="off"></label>
       <div class="f">写真${libHTML()}</div>
       <label class="f">ホームページ（あれば）<input id="edU" type="url" inputmode="url" placeholder="https://"></label>
-      <label class="f">メモ（あれば）<textarea id="edM" maxlength="200" placeholder="予約のことや集合場所など"></textarea></label>`;
+      <label class="f">メモ（あれば）<textarea id="edM" maxlength="200" placeholder="予約のことや集合場所など"></textarea></label>
+      <div class="f">だれに見せる？<div class="seg" id="edV">${[['','ふたつの家族'],[me,`${me}だけ`]].map(([v,l]) => `<button type="button" data-vis="${esc(v)}" aria-pressed="${(wz.d === 4 ? me : '') === v}">${esc(l)}</button>`).join('')}</div></div>`;
     foot = `<button type="button" class="btn ghost" id="wzBack">戻る</button><span class="grow"></span><button type="submit" class="btn">追加する</button>`;
   }
   $('edForm').innerHTML = `<div class="eh"><h3>予定を追加</h3><button type="button" class="x" id="edX" aria-label="閉じる">×</button></div>
@@ -1732,10 +1747,12 @@ function openStop(s){
   openSheet(s ? '予定を編集' : `11/${20+planDay} に予定を追加`, `
     <label class="f">予定の名前<input id="edN" required maxlength="60" value="${s ? esc(s.title) : ''}" placeholder="例：古宇利大橋をドライブ" autocomplete="off"></label>
     <div class="row2"><label class="f">時間<input id="edT" type="time" value="${s ? esc(s.t) : ''}"></label>
-      <label class="f">日にち<select id="edD">${DAYS.map((x,i) => `<option value="${i}" ${(s ? s.d : planDay)===i?'selected':''}>11/${20+i}</option>`).join('')}</select></label></div>
+      <label class="f">日にち<select id="edD">${DAYS.slice(0, me === '大橋家' ? 5 : dayCount()).map((x,i) => `<option value="${i}" ${(s ? s.d : planDay)===i?'selected':''}>11/${20+i}</option>`).join('')}</select></label></div>
+    <div class="f">だれに見せる？<div class="seg" id="edV">${[['','ふたつの家族'],[me,`${me}だけ`]].map(([v,l]) => `<button type="button" data-vis="${esc(v)}" aria-pressed="${(s ? s.only : (planDay === 4 ? me : '')) === v}">${esc(l)}</button>`).join('')}</div></div>
     <div class="f">写真${libHTML()}</div>
     <div class="f">状態<div class="seg" id="edS">${['予定','候補'].map(x => `<button type="button" data-st="${x}" aria-pressed="${x===st}">${x}</button>`).join('')}</div></div>
     <label class="f">メモ<textarea id="edM" maxlength="200" placeholder="集合場所や予約のことなど">${s ? esc(s.note) : ''}</textarea></label>
+    <label class="f">予約番号・座席など（あれば）<textarea id="edB" maxlength="300" placeholder="例：予約番号 0942 ／ 座席 7A・7B・7C">${s ? esc(s.booking) : ''}</textarea></label>
     <label class="f">ホームページ<input id="edU" type="url" inputmode="url" value="${s ? esc(s.url) : ''}" placeholder="https://"></label>
     <label class="f">前の予定からの移動<input id="edG" maxlength="60" value="${s ? esc(s.go) : ''}" placeholder="例：車 約20分"></label>`,
     footHTML(!!s, '保存'), !s);
@@ -1774,6 +1791,7 @@ $('edForm').addEventListener('click', e => {
     else Sync.remove('spot', edCtx.i.id);
     closeEd(); return;
   }
+  if (b.dataset.vis !== undefined){ $('edV').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); return; }
   if (b.dataset.st){ $('edS').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); return; }
   if ('img' in b.dataset){ edImg = b.dataset.img; paintLib(); }
 });
@@ -1794,7 +1812,8 @@ $('edForm').addEventListener('submit', e => {
     const url = $('edU').value.trim(); if (url && !safeUrl(url)){ toastNote('ホームページは https:// から始まるURLを入れてください'); return; }
     const img = edImg === '' ? autoImg(name) : edImg;
     const note = $('edM').value.trim(), w0 = {...wz};
-    img2media(img).then(img => { Sync.create('plan', stopPayload({spot:true, d:w0.d, t:w0.t, title:name, note, status:w0.kind, url, go:'', img})); });
+    const only = ($('edV').querySelector('[aria-pressed="true"]') || {}).dataset?.vis || '';
+    img2media(img).then(img => { Sync.create('plan', stopPayload({spot:true, d:w0.d, t:w0.t, title:name, note, status:w0.kind, url, go:'', img, only})); });
     insertMode = false; closeEd(); burst(); return;
   }
   const name = $('edN').value.trim(); if (!name) { $('edN').focus(); toastNote('名前を入れてください'); return; }
@@ -1803,7 +1822,8 @@ $('edForm').addEventListener('submit', e => {
   const img = edImg === '' ? autoImg(name) : edImg;
   if (edCtx.kind === 'stop'){
     const st = ($('edS').querySelector('[aria-pressed="true"]') || {}).dataset?.st || '候補';
-    const v = {t:$('edT').value, d:+$('edD').value, title:name, note:$('edM').value.trim(), status:st, url, go:$('edG').value.trim(), img};
+    const only = ($('edV').querySelector('[aria-pressed="true"]') || {}).dataset?.vis || '';
+    const v = {t:$('edT').value, d:+$('edD').value, title:name, note:$('edM').value.trim(), status:st, url, go:$('edG').value.trim(), img, only, booking:$('edB').value.trim()};
     const s0 = edCtx.s;
     img2media(img).then(img => { const pl = stopPayload({...(s0 || {}), spot:s0 ? s0.spot : true, ...v, img}); if (s0) Sync.save('plan', s0.id, pl); else Sync.create('plan', pl); });
     planDay = v.d;
@@ -2116,7 +2136,7 @@ function show(v, push){
   const el = $('v-'+v); el.classList.remove('in-r','in-l'); void el.offsetWidth; if (dir) el.classList.add(dir > 0 ? 'in-r' : 'in-l');
   document.querySelectorAll('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.v === v ? 'page' : 'false'));
   moveDot(); if (typeof markSeen === 'function') markSeen(v);
-  if (v === 'plan'){ const t = Math.floor((now() - DAY0)/864e5); if (t >= 0 && t <= 3) planDay = t; renderPlan(); }
+  if (v === 'plan'){ const t = Math.floor((now() - DAY0)/864e5); if (t >= 0 && t < dayCount()) planDay = t; renderPlan(); }
   if (v === 'wish') renderWish();
   if (v === 'spots') renderSpots();
   if (v === 'memory') renderMemory(); else stopMovie();
