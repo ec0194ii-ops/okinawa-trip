@@ -649,7 +649,7 @@ nav li.on::after{content:"";display:block;margin:3px auto 0;width:5px;height:5px
 /* trip timeline in hero */
 #heroImg{animation:herokb 24s ease-in-out infinite alternate}
 @keyframes herokb{from{transform:scale(1.02)}to{transform:scale(1.12) translate(-1.5%,-1%)}}
-.tl-strip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:2px 20px 2px;scroll-snap-type:x proximity;text-shadow:none}
+.tl-strip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:7px 20px 2px;scroll-snap-type:x proximity;text-shadow:none}
 .tl-strip::-webkit-scrollbar{display:none}
 .ti{flex:none;width:58px;display:flex;flex-direction:column;align-items:center;gap:4px;scroll-snap-align:start}
 .ti .tph{width:52px;height:52px;border-radius:50%;overflow:hidden;border:1.5px solid rgba(255,255,255,.6);box-shadow:0 4px 14px rgba(0,0,0,.25)}
@@ -891,6 +891,14 @@ html.standalone body{overscroll-behavior-y:none}
 .navi svg{width:15px;height:15px;color:#2f7cf6;transform:rotate(45deg);flex:none}
 .navi span{font-weight:800;font-size:11px;letter-spacing:.14em;color:#2f7cf6}
 .navi b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.navi span{white-space:nowrap;flex:none}
+/* during the trip: long plan names stay readable and the timeline row is never cut off */
+.hero.trip{aspect-ratio:auto;max-height:none;min-height:min(118vw,560px)}
+.hero.trip .hero-in{height:auto;min-height:min(118vw,560px)}
+.mg-now h2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.mg-now h2.mid{font-size:clamp(25px,7.4vw,32px)}
+.mg-now h2.long{font-size:clamp(21px,6.2vw,27px);line-height:1.25}
+.mg-now p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.55}
 .navi i{font-style:normal;opacity:.6}
 .navi:active{transform:scale(.97)}
 .lk .nav-a{color:#2f7cf6}
@@ -1236,6 +1244,7 @@ function renderHero(d){
   const firstLine = e => { const p = jstParts(e.at); return `${p.mo}.${p.day} ${WDE[p.wd].charAt(0) + WDE[p.wd].slice(1).toLowerCase()}　${e.t}`; };
   if (ms > 0){
     heroMemories(false); $('sky').style.opacity = '';
+    document.querySelector('.hero').classList.remove('trip');
     setHeroBg('img/hero.webp');
     const days = Math.floor(ms/864e5), hrs = Math.floor(ms%864e5/36e5), min = Math.floor(ms%36e5/6e4), sec = Math.floor(ms%6e4/1e3);
     const big = days > 0 ? days : hrs, unit = days > 0 ? (days === 1 ? 'day to go' : 'days to go') : (hrs === 1 ? 'hour to go' : 'hours to go');
@@ -1250,6 +1259,7 @@ function renderHero(d){
   }
   if (d > END){
     setHeroBg('img/sunset.webp');
+    document.querySelector('.hero').classList.remove('trip');
     const all = photos(), nv = all.filter(p => p.video).length;
     setHero(`<div class="mg-back"><small class="mg-k">MEMORIES · 2026.11.20 — 23</small><span class="mg-it">Welcome home.</span>
       <p id="hmCap">${isSample() ? '旅の写真や動画をMEMORYに入れると、ここで流れます（いまはサンプル）。' : `${all.length - nv}枚の写真${nv ? `と${nv}本の動画` : ''}が流れています。`}</p>
@@ -1265,7 +1275,11 @@ function renderHero(d){
   const focus = cur || next;
   setHeroBg(focus ? imgFor(focus) : '');
   const label = dayIdx === 2 && jstParts(d).h >= 18 ? 'Last night together' : (['Departure day','Day one','Day two','Last day'][dayIdx] || '');
-  const short = e => e.label.replace(/^.*｜/, '').replace(/ チェックイン| チェックアウト/, '');
+  const noEmoji = s => s.replace(/^[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}️‍\s]+/u, '');
+  const short = e => noEmoji(e.label.replace(/^.*｜/, '').replace(/ チェックイン| チェックアウト/, '')).replace(/（.*?）/g, '').replace(/ ?→.*$/, '');
+  const headOf = s => { const m = s.match(/^(.+?)（(.+)）$/); return m ? [m[1], m[2]] : [s, '']; };
+  const setHead = (txt, sub) => { const h = $('cuT'), n = [...txt].length; h.textContent = txt; h.className = n > 16 ? 'long' : n > 10 ? 'mid' : ''; return sub; };
+  document.querySelector('.hero').classList.add('trip');
   const strip = today.map(e => { const k = e === cur ? 'now' : e === next ? 'nx' : e.at && e.at <= d ? 'past' : '';
     const src = imgFor(e) || 'img/hero.webp';
     return `<div class="ti ${k}"><span class="tph"><img src="${src.replace('img/umikaji.webp','img/umikaji2.webp')}" alt="" loading="lazy"></span><b>${e.t || '--:--'}</b><small>${k === 'now' ? 'NOW' : k === 'nx' ? '<em id="nxIn"></em>' : esc(short(e))}</small></div>`; }).join('');
@@ -1277,11 +1291,12 @@ function renderHero(d){
   if (nowEl && !$('tlS').dataset.scrolled){ $('tlS').dataset.scrolled = 1; $('tlS').scrollLeft = Math.max(0, nowEl.offsetLeft - 70); }
   if (cur){
     $('nl').innerHTML = `<i class="live"></i>NOW · ${label}`;
-    $('cuT').textContent = cur.label;
-    $('cuS').textContent = `${cur.t}〜${cur.note ? '　' + cur.note : ''}`;
+    const [ht, hp] = headOf(cur.label);
+    setHead(ht);
+    $('cuS').textContent = `${cur.t}〜${hp ? '　' + hp : ''}${cur.note ? '　' + cur.note : ''}`;
   } else {
     $('nl').textContent = label;
-    $('cuT').textContent = next ? `つぎは ${next.label.replace(/^.*｜/, '')}` : 'おつかれさま';
+    setHead(next ? `つぎは ${headOf(next.label.replace(/^.*｜/, ''))[0]}` : 'おつかれさま');
     $('cuS').textContent = next ? `${next.t}から` : '今日の予定はおしまい。ゆっくり休もう。';
   }
   if (next && $('nxIn')){
@@ -2713,7 +2728,7 @@ function navUrl(q){ return 'https://www.google.com/maps/dir/?api=1&travelmode=dr
   if (!dest) { if (a) a.remove(); return; }
   if (!a) { a = document.createElement('a'); a.id = 'naviBtn'; a.className = 'navi'; a.target = '_blank'; a.rel = 'noopener'; box.appendChild(a); }
   const href = navUrl(dest); if (a.getAttribute('href') !== href) a.href = href;
-  const name = next.label.replace(/^.*｜/, '').replace(/^.*（(.+)）$/, '$1');
+  const name = next.label.replace(/^.*｜/, '').replace(/^.*（(.+)）$/, '$1').replace(/^[\p{Extended_Pictographic}\p{Emoji_Presentation}\uFE0F\u200D\s]+/u, '');
   const txt = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 21l8-4 8 4z" fill="currentColor"/></svg><span>ナビ</span><b>${esc(name)}へ</b><i>↗</i>`;
   if (a.dataset.k !== txt) { a.dataset.k = txt; a.innerHTML = txt; }
 }; }
